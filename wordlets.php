@@ -106,6 +106,8 @@ class Wordlets_Widget extends WP_Widget {
 			$display = $fname;
 			if ( isset($info['props']['name']) ) $display = $info['props']['name'];
 
+			if ( isset($info['props']['description']) ) $display .= ' (' . $info['props']['description'] . ')';
+
 			$selected = '';
 			if ( isset($instance['template']) && $fname == $instance['template'] ) $selected = 'selected="selected"';
 
@@ -116,33 +118,28 @@ class Wordlets_Widget extends WP_Widget {
 		foreach ( $wordlets_files as $fname => $info ) {
 			?><fieldset class="wordlet_set"><?php
 			foreach ( $info['wordlets'] as $wname => $wordlet ) {
-				$value_name = $fname . '__' . $wname . '__value';
-				$value = '';
-				if ( isset($instance[$value_name]) ) {
-					$value = $instance[$value_name];
-				} elseif ( isset($wordlet['default']) ) {
-					$value = $wordlet['default'];
-				}
-
 				$friendly_name = $wname;
-				if ( isset($wordlet['friendly_name']) ) {
-					$friendly_name = $wordlet['friendly_name'];
+				if ( isset($wordlet->label) ) {
+					$friendly_name = $wordlet->label;
 				}
 
-				$description = $description;
-				if ( isset($wordlet['description']) ) {
-					$description = $wordlet['description'];
+				if ( $wordlet->is_array ) {
+					?><fieldset style="border: 1px solid #ccc; padding: 0 1em"><legend><?php _e( $friendly_name ); ?></legend><?php
+					$value_prefix = $fname . '__' . $wname;
+					for ( $i = 0; $i < 100; $i++ ) {
+						$value_name = $value_prefix . '__' . $i . '__value';
+						if ( isset($instance[$value_name]) ) {
+							$this->_input($value_name, $i, $wordlet, $instance);
+						} else {
+							$this->_input($value_name, $i, $wordlet, $instance, false);
+							break;
+						}
+					}
+					?></fieldset><?php
+				} else {
+					$value_name = $fname . '__' . $wname . '__value';
+					$this->_input($value_name, $friendly_name, $wordlet, $instance);
 				}
-
-				?>
-				<p>
-				<label for="<?php echo $this->get_field_id( $value_name ); ?>"><?php _e( $friendly_name . ':' ); ?></label> 
-				<input class="widefat" id="<?php echo $this->get_field_id( $value_name ); ?>" name="<?php echo $this->get_field_name( $value_name ); ?>" type="text" value="<?php echo esc_attr( $value ); ?>">
-				<?php if ( $description ) { ?>
-					<i><?php echo $description ?></i>
-				<?php } ?>
-				</p>
-				<?php
 			}
 			?></fieldset><?php
 		}
@@ -166,20 +163,106 @@ class Wordlets_Widget extends WP_Widget {
 		$file = $this->_get_wordlet_files($instance['template']);
 
 		foreach ( $file['wordlets'] as $wname => $wordlet ) {
-			$value_name = $file['name'] . '__' . $wname . '__value';
-			$instance[$value_name] = ( ! empty( $new_instance[$value_name] ) ) ? strip_tags( $new_instance[$value_name] ) : '';
+			if ( $wordlet->is_array ) {
+				$value_prefix = $file['name'] . '__' . $wname;
+				$k = 0;
+				for ( $i = 0; $i < 100; $i++ ) {
+					$value_name = $value_prefix . '__' . $i . '__value';
+					if ( isset($new_instance[$value_name]) ) {
+						if ( $new_instance[$value_name] ) {
+							$new_value_name = $value_prefix . '__' . $k . '__value';
+							$instance[$new_value_name] = ( ! empty( $new_instance[$value_name] ) ) ? strip_tags( $new_instance[$value_name] ) : '';
+							$k++;
+						}
+					} else {
+						break;
+					}
+				}
+			} else {
+				$value_name = $file['name'] . '__' . $wname . '__value';
+				$instance[$value_name] = ( ! empty( $new_instance[$value_name] ) ) ? strip_tags( $new_instance[$value_name] ) : '';
+			}
 		}
 
 		return $instance;
 	}
 
+	/* Custom methods */
+
 	private $_file;
 	private $_instance;
 	private $_keys = array('name', 'default', 'friendly_name', 'description');
 
+	private function _input($value_name, $friendly_name, $wordlet, $instance, $use_default = true) {
+		$value = '';
+		$type = 'text';
+
+		if ( isset($instance[$value_name]) ) {
+			$value = $instance[$value_name];
+		} elseif ( $use_default && isset($wordlet->default) ) {
+			$value = $wordlet->default;
+		}
+
+		// Determine input type
+		if ( is_array($wordlet->default) ) {
+			$type = 'select';
+		} elseif ( preg_match("/\n/s", $wordlet->default) ) {
+			$type = 'textarea';
+		} elseif ( is_int($wordlet->default) ) {
+			$type = 'number';
+		} elseif ( is_bool($wordlet->default) ) {
+			$type = 'checkbox';
+		}
+
+		$description = '';
+		if ( isset($wordlet->description) ) {
+			$description = $wordlet->description;
+		}
+
+		?>
+		<p>
+		<label for="<?php echo $this->get_field_id( $value_name ); ?>">
+			<?php if ( $type == 'checkbox' ) { ?>
+				<input type="checkbox" id="<?php echo $this->get_field_id( $value_name ); ?>" name="<?php echo $this->get_field_name( $value_name ); ?>" type="text" value="1" <?php echo ( $value ) ? 'checked':'' ?>>
+			<?php } ?>
+			<?php _e( $friendly_name . (( $type != 'checkbox' ) ? ':' : '') ); ?>
+		</label>
+
+		<?php if ( $type == 'text' || $type == 'number' ) { ?>
+			<input class="widefat" id="<?php echo $this->get_field_id( $value_name ); ?>" name="<?php echo $this->get_field_name( $value_name ); ?>" type="<?php echo $type ?>" value="<?php echo esc_attr( $value ); ?>">
+		<?php } elseif ( $type == 'textarea' ) { ?>
+			<textarea class="widefat" id="<?php echo $this->get_field_id( $value_name ); ?>" name="<?php echo $this->get_field_name( $value_name ); ?>"><?php echo esc_attr( $value ); ?></textarea>
+		<?php } elseif ( $type == 'select' ) { ?>
+			<select  id="<?php echo $this->get_field_id( $value_name ); ?>" name="<?php echo $this->get_field_name( $value_name ); ?>">
+				<?php foreach ( $wordlet->default as $key => $default ) { ?>
+					<option value="<?php echo esc_attr( $key ); ?>" <?php echo ( $key == $value )?'selected':'' ?>><?php echo esc_attr( $default ); ?></option>
+				<?php } ?>
+			</select>
+		<?php } ?>
+
+		<?php if ( $description ) { ?>
+			<i><?php echo $description ?></i>
+		<?php } ?>
+		</p>
+		<?php
+	}
+
 	public function get_wordlet($name) {
 		$value_name = $this->_file['name'] . '__' . $name . '__value';
 		if ( isset($this->_instance[$value_name]) ) return __( $this->_instance[$value_name], 'text_domain' );
+	}
+
+	public function get_wordlet_array($name) {
+		$values = array();
+		$value_prefix = $this->_file['name'] . '__' . $name;
+		for ( $i = 0; $i < 100; $i++ ) {
+			$value_name = $value_prefix . '__' . $i . '__value';
+			if ( isset($this->_instance[$value_name]) ) {
+				$values[] = __( $this->_instance[$value_name], 'text_domain' );
+			} else {
+				return $values;
+			}
+		}
 	}
 
 	private function _get_wordlet_files($template = null) {
@@ -197,12 +280,14 @@ class Wordlets_Widget extends WP_Widget {
 		}
 
 		// Then scan the wordlets dir (override root files)
-		$files = scandir( $tpl_dir . DIRECTORY_SEPARATOR . 'wordlets' );
-		foreach ( $files as $file ) {
-			if ( (preg_match('/^wordlets\-(.+)\.php$/', $file, $matches) || preg_match('/^(.+)\.php$/', $file, $matches)) && (!$template || $template == $matches[1]) ) {
-				$name = $matches[1];
-				$wordlets_files[$name] = $this->_parse_file($tpl_dir . DIRECTORY_SEPARATOR . $file);
-				$wordlets_files[$name]['name'] = $name;
+		$wordlets_dir = $tpl_dir . DIRECTORY_SEPARATOR . 'wordlets';
+		if ( is_readable($wordlets_dir) && $files = scandir( $wordlets_dir ) ) {
+			foreach ( $files as $file ) {
+				if ( (preg_match('/^wordlets\-(.+)\.php$/', $file, $matches) || preg_match('/^(.+)\.php$/', $file, $matches)) && (!$template || $template == $matches[1]) ) {
+					$name = $matches[1];
+					$wordlets_files[$name] = $this->_parse_file($tpl_dir . DIRECTORY_SEPARATOR . $file);
+					$wordlets_files[$name]['name'] = $name;
+				}
 			}
 		}
 
@@ -225,27 +310,48 @@ class Wordlets_Widget extends WP_Widget {
 			}
 		}
 
-		$ws = array();
+		$wordlets = array();
 		// Find wordlets
-		if ( preg_match_all('/\b((wordlet)|(w))\((.*?)\)/is', $content, $matches) && !empty($matches[4]) ) {
-			foreach ( $matches[4] as $match ) {
-				if ( preg_match_all("/('((\\\')|[^'])*')|(\"((\\\\\")|[^\"])*\")/s", $match, $wordlets) && !empty($wordlets[0]) ) {
-					$w = array();
-					foreach ( $wordlets[0] as $k => $wordlet ) {
-						eval('$wval = ' . $wordlet . ';');
-						$w[$this->_keys[$k]] = $wval;
+		if ( preg_match_all('/\bwordlet(_array)?\s*\(\s*(.+?)\s*\)\s*(\)|;|(\?>)|(&&)|(as)|(\|\|))/', $content, $matches) && !empty($matches[2]) ) {
+			foreach ( $matches[2] as $key => $match ) {
+				eval('$wordlet = new Wordlets_Wordlet(' . $match . ');');
+				// Don't override wordlets
+				// TODO: Check to see if wordlet has more info?
+				if ( !isset($wordlets[$wordlet->name]) ) {
+					if ( $matches[1][$key] == '_array' ) {
+						$wordlet->is_array = 1;
 					}
-					$ws[$w['name']] = $w;
+					$wordlets[$wordlet->name] = $wordlet;
 				}
 			}
 		}
 
-		return array('props' => $file_props, 'wordlets' => $ws);
+		return array('props' => $file_props, 'wordlets' => $wordlets);
 	}
 
 	static $me;
 	static function GetWordlet($name) {
 		return self::$me->get_wordlet($name);
+	}
+
+	static function GetWordletArray($name) {
+		return self::$me->get_wordlet_array($name);
+	}
+}
+
+class Wordlets_Wordlet {
+	public $name;
+	public $default;
+	public $label;
+	public $description;
+	public $value;
+	public $is_array = false;
+
+	function __construct($name, $default = null, $label = null, $description = null) {
+		$this->name = $name;
+		$this->default = $default;
+		$this->label = $label;
+		$this->description = $description;
 	}
 }
 
@@ -256,5 +362,14 @@ function wordlet($name, $default = null, $friendly_name = null, $description = n
 if ( !defined('w') ) {
 	function w($name) {
 		return wordlet($name);
+	}
+}
+function wordlet_array($name, $default = null, $friendly_name = null, $description = null) {
+	return Wordlets_Widget::GetWordletArray($name);
+}
+
+if ( !defined('wa') ) {
+	function wa($name) {
+		return wordlet_array($name);
 	}
 }

@@ -79,7 +79,7 @@ class Wordlets_Widget extends WP_Widget {
 		include($file['props']['file']);
 
 		if ( current_user_can( 'manage_options' ) ) {
-			echo '<a href="' . admin_url( 'widgets.php#' . $args['widget_id'] ) . '" class="wordlets-admin-link">' . __( 'Edit', 'text_domain' ) . '</a>';
+			echo '<a href="' . admin_url( 'widgets.php#' . $args['widget_id'] ) . '" target="_blank" class="wordlets-admin-link">' . __( 'Edit', 'text_domain' ) . '</a>';
 		}
 		echo $args['after_widget'];
 	}
@@ -327,35 +327,58 @@ class Wordlets_Widget extends WP_Widget {
 		}
 	}
 
+	public static $WordletFiles = null;
+
 	private function _get_wordlet_files($template = null) {
 		$wordlets_files = array();
 		$tpl_dir = get_template_directory();
 
-		// Check the root dir first
-		$files = scandir( $tpl_dir );
-		foreach ( $files as $file ) {
-			if ( preg_match('/^wordlets\-(.+)\.php$/', $file, $matches) && (!$template || $template == $matches[1]) ) {
-				$name = $matches[1];
-				$wordlets_files[$name] = $this->_parse_file($tpl_dir . DIRECTORY_SEPARATOR . $file);
-				$wordlets_files[$name]['name'] = $name;
-			}
-		}
+		if ( $template ) {
+			if ( isset(self::$WordletFiles[$template]) ) return self::$WordletFiles[$template];
 
-		// Then scan the wordlets dir (override root files)
-		$wordlets_dir = $tpl_dir . DIRECTORY_SEPARATOR . 'wordlets';
-		if ( is_readable($wordlets_dir) && $files = scandir( $wordlets_dir ) ) {
+			$files = array(
+				$tpl_dir . DIRECTORY_SEPARATOR . 'wordlets' . DIRECTORY_SEPARATOR . $template . '.php',
+				$tpl_dir . DIRECTORY_SEPARATOR . 'wordlets' . DIRECTORY_SEPARATOR . 'wordlet-' . $template . '.php',
+				$tpl_dir . DIRECTORY_SEPARATOR . 'wordlets-' . $template . '.php',
+			);
+
 			foreach ( $files as $file ) {
-				if ( (preg_match('/^wordlets\-(.+)\.php$/', $file, $matches) || preg_match('/^(.+)\.php$/', $file, $matches)) && (!$template || $template == $matches[1]) ) {
+				if ( is_readable($file) ) {
+					$wf = $this->_parse_file($file);
+					$wf['name'] = $template;
+					return $wf;
+				}
+			}
+		} else {
+			if ( self::$WordletFiles ) return self::$WordletFiles;
+
+			// Check the root dir first
+			$files = scandir( $tpl_dir );
+			foreach ( $files as $file ) {
+				if ( preg_match('/^wordlets\-(.+)\.php$/', $file, $matches) ) {
 					$name = $matches[1];
 					$wordlets_files[$name] = $this->_parse_file($tpl_dir . DIRECTORY_SEPARATOR . $file);
 					$wordlets_files[$name]['name'] = $name;
 				}
 			}
+
+			// Then scan the wordlets dir (override root files)
+			$wordlets_dir = $tpl_dir . DIRECTORY_SEPARATOR . 'wordlets';
+			if ( is_readable($wordlets_dir) && $files = scandir( $wordlets_dir ) ) {
+				foreach ( $files as $file ) {
+					if ( preg_match('/^wordlets\-(.+)\.php$/', $file, $matches) || preg_match('/^(.+)\.php$/', $file, $matches) ) {
+						$name = $matches[1];
+						$wordlets_files[$name] = $this->_parse_file($tpl_dir . DIRECTORY_SEPARATOR . $file);
+						$wordlets_files[$name]['name'] = $name;
+					}
+				}
+			}
+
+			self::$WordletFiles = $wordlets_files;
+
+			return $wordlets_files;
 		}
 
-		if ( $template ) return array_pop($wordlets_files);
-
-		return $wordlets_files;
 	}
 
 	private function _parse_file($file) {
@@ -374,13 +397,13 @@ class Wordlets_Widget extends WP_Widget {
 
 		$wordlets = array();
 		// Find wordlets
-		if ( preg_match_all('/\bwordlet(_array)?\s*\(\s*(.+?)\s*\)\s*(\)|;|(\?>)|(&&)|(as)|(\|\|))/', $content, $matches) && !empty($matches[2]) ) {
-			foreach ( $matches[2] as $key => $match ) {
+		if ( preg_match_all('/\b((wordlet_array)|(wa)|(wordlet)|(w))\s*\(\s*(.+?)\s*\)\s*(\)|;|(\?>)|(&&)|(as)|(\|\|))/', $content, $matches) && !empty($matches[6]) ) {
+			foreach ( $matches[6] as $key => $match ) {
 				eval('$wordlet = new Wordlets_Wordlet(' . $match . ');');
 				// Don't override wordlets
 				// TODO: Check to see if wordlet has more info?
 				if ( !isset($wordlets[$wordlet->name]) ) {
-					if ( $matches[1][$key] == '_array' ) {
+					if ( $matches[1][$key] == 'wordlet_array' ) {
 						$wordlet->is_array = 1;
 					}
 					$wordlets[$wordlet->name] = $wordlet;

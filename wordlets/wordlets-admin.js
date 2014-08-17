@@ -41,7 +41,6 @@ $(function() {
 		})
 		// Fill in the title if it's blank
 		.delegate('.widget[id*="wordlets_widget"]', 'click', function() {
-			console.log(1);
 			var $this = $(this);
 			var $template = $this.find('.wordlets-widget-template');
 			var $title = $this.find('.wordlet-widget-title');

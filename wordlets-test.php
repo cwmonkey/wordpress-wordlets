@@ -15,6 +15,10 @@
 	<? endif ?>
 
 	<form action="http://example.com/some-remote-site">
+		<? foreach ( wordlet_array('tracking-vars', '', 'Tracking Variables', 'Key = name, Value = value, as in name="utm-source" value="blog"') as $input ): ?>
+			<input type="hidden" name="<?=$input->key ?>" value="<?=$input->value ?>">
+		<? endforeach ?>
+
 		<p class="input text">
 			<label for="test-name"><?=wordlet('required-label', '*', 'Required Label') ?> <?=wordlet('name-label', 'Input your name', 'Name Label') ?></label>
 			<input type="text" name="name" id="test-name">

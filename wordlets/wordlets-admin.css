@@ -1,0 +1,7 @@
+.wordlet-widget-set {
+	display: none;
+}
+
+.wordlet-widget-set.active {
+	display: block;
+}

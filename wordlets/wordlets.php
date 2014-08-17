@@ -50,7 +50,10 @@ class Wordlets_Widget extends WP_Widget {
 			array( 'description' => __( 'A Widget for Developers', 'text_domain' ), ) // Args
 		);
 
-		wp_enqueue_script( 'wordlets_widget', plugins_url('wordlets-admin.js', __FILE__), array( 'jquery' ), self::VERSION );
+		if ( is_admin() ) {
+			wp_enqueue_script( 'wordlets_widget', plugins_url('wordlets-admin.js', __FILE__), array( 'jquery' ), self::VERSION );
+			wp_enqueue_style( 'wordlets_widget', plugins_url('wordlets-admin.css', __FILE__), null, self::VERSION );
+		}
 
 		self::$me = $this;
 	}
@@ -74,6 +77,10 @@ class Wordlets_Widget extends WP_Widget {
 		}
 		echo __( 'Hello, World!', 'text_domain' );*/
 		include($file['props']['file']);
+
+		if ( current_user_can( 'manage_options' ) ) {
+			echo '<a href="' . admin_url( 'widgets.php#' . $args['widget_id'] ) . '" class="wordlets-admin-link">' . __( 'Edit', 'text_domain' ) . '</a>';
+		}
 		echo $args['after_widget'];
 	}
 
@@ -94,7 +101,7 @@ class Wordlets_Widget extends WP_Widget {
 		<div class="wordlets-widget-wrapper">
 		<p>
 		<label for="<?php echo $this->get_field_id( 'title' ); ?>"><?php _e( 'Title (not shown on widget):' ); ?></label> 
-		<input class="widefat" id="<?php echo $this->get_field_id( 'title' ); ?>" name="<?php echo $this->get_field_name( 'title' ); ?>" type="text" value="<?php echo esc_attr( $title ); ?>">
+		<input class="widefat wordlet-widget-title" id="<?php echo $this->get_field_id( 'title' ); ?>" name="<?php echo $this->get_field_name( 'title' ); ?>" type="text" value="<?php echo esc_attr( $title ); ?>">
 		</p>
 		<?php 
 
@@ -134,7 +141,7 @@ class Wordlets_Widget extends WP_Widget {
 		$loops = 0;
 		foreach ( $wordlets_files as $fname => $info ) {
 			?>
-			<fieldset class="wordlet-widget-set" style="<?php echo ( (!$instance['template'] && $loops) || ($fname != $instance['template']) )?'display:none':''; ?>" data-template="<?php echo esc_attr( $fname ); ?>">
+			<fieldset class="wordlet-widget-set <?php echo ( (!$instance['template'] && $loops) || ($fname != $instance['template']) )?'':'active'; ?>" data-template="<?php echo esc_attr( $fname ); ?>">
 			<?php
 			foreach ( $info['wordlets'] as $wname => $wordlet ) {
 				$friendly_name = $wname;
@@ -292,7 +299,7 @@ class Wordlets_Widget extends WP_Widget {
 		<?php } ?>
 
 		</label>
-		<?php if ( $description ) { ?>
+		<?php if ( $description && !$hide_labels ) { ?>
 			<i><?php echo $description ?></i>
 		<?php } ?>
 		</p>

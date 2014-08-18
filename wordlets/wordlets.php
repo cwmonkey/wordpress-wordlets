@@ -236,6 +236,10 @@ class Wordlets_Widget extends WP_Widget {
 	private $_instance;
 	private $_keys = array('name', 'default', 'friendly_name', 'description');
 
+	/**
+	 * Render wordlet admin input value.
+	 */
+
 	private function _input($value_prefix, $friendly_name, $wordlet, $instance, $use_default = true, $show_key = false, $hide_labels = false) {
 		$value_name = $value_prefix . '__value';
 		$value = '';
@@ -306,10 +310,18 @@ class Wordlets_Widget extends WP_Widget {
 		<?php
 	}
 
+	/**
+	 * Echo a wordlet input value to the screen.
+	 */
+
 	public function get_wordlet($name) {
 		$value_name = $this->_file['name'] . '__' . $name . '__value';
 		if ( isset($this->_instance[$value_name]) ) return __( $this->_instance[$value_name], 'text_domain' );
 	}
+
+	/**
+	 * Return array of Wordlet_Wordlets_Value.
+	 */
 
 	public function get_wordlet_array($name) {
 		$values = array();
@@ -328,6 +340,10 @@ class Wordlets_Widget extends WP_Widget {
 	}
 
 	public static $WordletFiles = null;
+
+	/**
+	 * Return information/wordlet settings in a single wordlet file or all wordlet files within theme.
+	 */
 
 	private function _get_wordlet_files($template = null) {
 		$wordlets_files = array();
@@ -381,6 +397,10 @@ class Wordlets_Widget extends WP_Widget {
 
 	}
 
+	/**
+	 * Return properties and wordlet objects within a wordlet file.
+	 */
+
 	private function _parse_file($file) {
 		$file_props = array();
 		$content = file_get_contents($file);
@@ -415,14 +435,27 @@ class Wordlets_Widget extends WP_Widget {
 	}
 
 	static $me;
+
+	/**
+	 * Echo a wordlet input value to the screen.
+	 */
+
 	static function GetWordlet($name) {
 		return self::$me->get_wordlet($name);
 	}
+
+	/**
+	 * Get an array of Wordlets_Wordlet_Value objects.
+	 */
 
 	static function GetWordletArray($name) {
 		return self::$me->get_wordlet_array($name);
 	}
 }
+
+/**
+ * Container for admin input settings.
+ */
 
 class Wordlets_Wordlet {
 	public $name;
@@ -440,6 +473,13 @@ class Wordlets_Wordlet {
 	}
 }
 
+/**
+ * Class for wordlet array objects.
+ *
+ * $wa = wordlet_array('things');
+ * <?=$wa->key; ?>: <?=$wa->value; ?>
+ */
+
 class Wordlets_Wordlet_Value {
 	public $key;
 	public $value;
@@ -453,18 +493,37 @@ class Wordlets_Wordlet_Value {
 	}
 }
 
-function wordlet($name, $default = null, $friendly_name = null, $description = null) {
+// Template helper functions
+
+/**
+ * Echo a wordlet input value to the screen.
+ */
+
+function wordlet($name) {
 	return Wordlets_Widget::GetWordlet($name);
 }
+
+/**
+ * function wordlet alias
+ */
 
 if ( !defined('w') ) {
 	function w($name) {
 		return wordlet($name);
 	}
 }
-function wordlet_array($name, $default = null, $friendly_name = null, $description = null) {
+
+/**
+ * Get an array of Wordlets_Wordlet_Value objects.
+ */
+
+function wordlet_array($name) {
 	return Wordlets_Widget::GetWordletArray($name);
 }
+
+/**
+ * function wordlet_array alias.
+ */
 
 if ( !defined('wa') ) {
 	function wa($name) {

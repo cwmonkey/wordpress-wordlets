@@ -53,6 +53,10 @@ class Wordlets_Widget extends WP_Widget {
 		if ( is_admin() ) {
 			wp_enqueue_script( 'wordlets_widget', plugins_url('wordlets-admin.js', __FILE__), array( 'jquery' ), self::VERSION );
 			wp_enqueue_style( 'wordlets_widget', plugins_url('wordlets-admin.css', __FILE__), null, self::VERSION );
+
+			// Images
+			if ( ! did_action( 'wp_enqueue_media' ) ) wp_enqueue_media();
+			wp_enqueue_script( 'custom-header' );
 		}
 
 		self::$me = $this;
@@ -79,7 +83,7 @@ class Wordlets_Widget extends WP_Widget {
 		include($file['props']['file']);
 
 		if ( current_user_can( 'manage_options' ) ) {
-			echo '<a href="' . admin_url( 'widgets.php#' . $args['widget_id'] ) . '" target="_blank" class="wordlets-admin-link">' . __( 'Edit', 'text_domain' ) . '</a>';
+			echo '<a href="' . admin_url( 'widgets.php?' . $args['widget_id'] ) . '" target="_blank" class="wordlets-admin-link">' . __( 'Edit', 'text_domain' ) . '</a>';
 		}
 		echo $args['after_widget'];
 	}
@@ -151,7 +155,7 @@ class Wordlets_Widget extends WP_Widget {
 
 				if ( $wordlet->is_array ) {
 					?>
-					<fieldset style="border: 1px solid #ccc; padding: 0 1em">
+					<fieldset>
 					<legend><?php _e( $friendly_name ); ?></legend>
 					<?php
 					$value_prefix = $fname . '__' . $wname;
@@ -206,14 +210,16 @@ class Wordlets_Widget extends WP_Widget {
 				$k = 0;
 				for ( $i = 0; $i < 100; $i++ ) {
 					$value_name = $value_prefix . '__' . $i . '__value';
-					$key_name = $value_prefix . '__' . $i . '__key';
 					if ( isset($new_instance[$value_name]) ) {
 						if ( $new_instance[$value_name] ) {
 							$new_value_name = $value_prefix . '__' . $k . '__value';
-							$instance[$new_value_name] = ( ! empty( $new_instance[$value_name] ) ) ? strip_tags( $new_instance[$value_name] ) : '';
-							if ( isset($new_instance[$key_name]) ) {
-								$new_key_name = $value_prefix . '__' . $k . '__key';
-								$instance[$new_key_name] = ( ! empty( $new_instance[$key_name] ) ) ? strip_tags( $new_instance[$key_name] ) : '';
+							$instance[$new_value_name] = ( ! empty( $new_instance[$value_name] ) ) ? $new_instance[$value_name] : '';
+							foreach ( $this->extra_names as $name ) {
+								$extra_name = $value_prefix . '__' . $i . '__' . $name;
+								if ( isset($new_instance[$extra_name]) ) {
+									$new_extra_name = $value_prefix . '__' . $k . '__' . $name;
+									$instance[$new_extra_name] = ( ! empty( $new_instance[$extra_name] ) ) ? $new_instance[$extra_name] : '';
+								}
 							}
 							$k++;
 						}
@@ -223,7 +229,11 @@ class Wordlets_Widget extends WP_Widget {
 				}
 			} else {
 				$value_name = $file['name'] . '__' . $wname . '__value';
-				$instance[$value_name] = ( ! empty( $new_instance[$value_name] ) ) ? strip_tags( $new_instance[$value_name] ) : '';
+				$instance[$value_name] = ( ! empty( $new_instance[$value_name] ) ) ? $new_instance[$value_name] : '';
+				foreach ( $extra_names as $name ) {
+					$extra_name = $file['name'] . '__' . $wname . '__' . $name;
+					$instance[$extra_name] = ( ! empty( $new_instance[$extra_name] ) ) ? $new_instance[$extra_name] : '';
+				}
 			}
 		}
 
@@ -232,6 +242,7 @@ class Wordlets_Widget extends WP_Widget {
 
 	/* Custom methods */
 
+	private $extra_names = array('key', 'alt', 'link');
 	private $_file;
 	private $_instance;
 	private $_keys = array('name', 'default', 'friendly_name', 'description');
@@ -242,18 +253,28 @@ class Wordlets_Widget extends WP_Widget {
 
 	private function _input($value_prefix, $friendly_name, $wordlet, $instance, $use_default = true, $show_key = false, $hide_labels = false) {
 		$value_name = $value_prefix . '__value';
+		$alt_value_name = $value_prefix . '__alt';
+		$link_value_name = $value_prefix . '__link';
 		$value = '';
+		$alt_value = '';
+		$link_value = '';
 		$type = 'text';
 
 		if ( isset($instance[$value_name]) ) {
 			$value = $instance[$value_name];
-		} elseif ( $use_default && isset($wordlet->default) ) {
+		} elseif ( $use_default && isset($wordlet->default) && !$wordlet->is_image ) {
 			$value = $wordlet->default;
 		}
 
 		// Determine input type
 		if ( is_array($wordlet->default) ) {
 			$type = 'select';
+		} elseif ( $wordlet->is_image ) {
+			$type = 'image';
+			if ( isset($instance[$alt_value_name]) ) {
+				$alt_value = $instance[$alt_value_name];
+				$link_value = $instance[$link_value_name];
+			}
 		} elseif ( preg_match("/\n/s", $wordlet->default) ) {
 			$type = 'textarea';
 		} elseif ( is_int($wordlet->default) ) {
@@ -269,40 +290,64 @@ class Wordlets_Widget extends WP_Widget {
 
 		?>
 		<p>
-		<?php
-		if ( $show_key ) {
-			$key_name = $value_prefix . '__key';
-			$key = $friendly_name;
-			if ( isset($instance[$key_name]) ) {
-				$key = $instance[$key_name];
+		<?php if ( $type == 'image' ) { ?>
+			<fieldset>
+				<p>
+					<label for="<?php echo $this->get_field_id( $value_name ); ?>">
+						Image URL:
+						<input class="widefat" id="<?php echo $this->get_field_id( $value_name ); ?>" name="<?php echo $this->get_field_name( $value_name ); ?>" type="text" value="<?php echo esc_attr( $value ); ?>">
+					</label>
+					<input type="button" id="<?php echo $this->get_field_id( $value_name ); ?>-set" value="<?php _e( 'Upload Image', 'text_domain' ); ?>" class="button wordlets-widget-image-set" data-target="#<?php echo $this->get_field_id( $value_name ); ?>" data-alt="#<?php echo $this->get_field_id( $alt_value_name ); ?>" data-image="#<?php echo $this->get_field_id( $value_name ); ?>-image">
+					<img style="max-width:100%;max-height:100px;" id="<?php echo $this->get_field_id( $value_name ); ?>-image" src="<?php echo esc_attr( (($value)?$value:'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7') ); ?>">
+				</p>
+				<p>
+					<label for="<?php echo $this->get_field_id( $alt_value_name ); ?>">
+						Alt:
+						<input class="widefat" id="<?php echo $this->get_field_id( $alt_value_name ); ?>" name="<?php echo $this->get_field_name( $alt_value_name ); ?>" type="text" value="<?php echo esc_attr( $alt_value ); ?>">
+					</label>
+				</p>
+				<p>
+					<label for="<?php echo $this->get_field_id( $link_value_name ); ?>">
+						Link:
+						<input class="widefat" id="<?php echo $this->get_field_id( $link_value_name ); ?>" name="<?php echo $this->get_field_name( $link_value_name ); ?>" type="text" value="<?php echo esc_attr( $link_value ); ?>">
+					</label>
+				</p>
+			</fieldset>
+		<?php } else { ?>
+			<?php
+			if ( $show_key ) {
+				$key_name = $value_prefix . '__key';
+				$key = $friendly_name;
+				if ( isset($instance[$key_name]) ) {
+					$key = $instance[$key_name];
+				}
+				?>
+				<label for="<?php echo $this->get_field_id( $key_name ); ?>" style="<?php echo ($show_key)?'display:inline-block;width:30%;margin-right:1em':''; ?>">
+					<?php if ( !$hide_labels ) echo __( 'Key:', 'text_domain' ); ?>
+					<input class="widefat" id="<?php echo $this->get_field_id( $key_name ); ?>" name="<?php echo $this->get_field_name( $key_name ); ?>" type="text" value="<?php echo esc_attr( $key ); ?>">
+				</label>
+			<?php
 			}
 			?>
-			<label for="<?php echo $this->get_field_id( $key_name ); ?>" style="<?php echo ($show_key)?'display:inline-block;width:30%;margin-right:1em':''; ?>">
-				<?php if ( !$hide_labels ) echo __( 'Key:', 'text_domain' ); ?>
-				<input class="widefat" id="<?php echo $this->get_field_id( $key_name ); ?>" name="<?php echo $this->get_field_name( $key_name ); ?>" type="text" value="<?php echo esc_attr( $key ); ?>">
-			</label>
-		<?php
-		}
-		?>
-		<label for="<?php echo $this->get_field_id( $value_name ); ?>" style="<?php echo ($show_key)?'display:inline-block;width:60%':''; ?>">
-			<?php if ( $type == 'checkbox' ) { ?>
-				<input type="checkbox" id="<?php echo $this->get_field_id( $value_name ); ?>" name="<?php echo $this->get_field_name( $value_name ); ?>" type="text" value="1" <?php echo ( $value ) ? 'checked':'' ?>>
-			<?php } ?>
-			<?php if ( !$hide_labels ) _e( (($show_key)?'Value':$friendly_name) . (( $type != 'checkbox' ) ? ':' : '') ); ?>
-
-		<?php if ( $type == 'text' || $type == 'number' ) { ?>
-			<input class="widefat" id="<?php echo $this->get_field_id( $value_name ); ?>" name="<?php echo $this->get_field_name( $value_name ); ?>" type="<?php echo $type ?>" value="<?php echo esc_attr( $value ); ?>">
-		<?php } elseif ( $type == 'textarea' ) { ?>
-			<textarea class="widefat" id="<?php echo $this->get_field_id( $value_name ); ?>" name="<?php echo $this->get_field_name( $value_name ); ?>"><?php echo esc_attr( $value ); ?></textarea>
-		<?php } elseif ( $type == 'select' ) { ?>
-			<select  id="<?php echo $this->get_field_id( $value_name ); ?>" name="<?php echo $this->get_field_name( $value_name ); ?>">
-				<?php foreach ( $wordlet->default as $key => $default ) { ?>
-					<option value="<?php echo esc_attr( $key ); ?>" <?php echo ( $key == $value )?'selected':'' ?>><?php echo esc_attr( $default ); ?></option>
+			<label for="<?php echo $this->get_field_id( $value_name ); ?>" style="<?php echo ($show_key)?'display:inline-block;width:60%':''; ?>">
+				<?php if ( $type == 'checkbox' ) { ?>
+					<input type="checkbox" id="<?php echo $this->get_field_id( $value_name ); ?>" name="<?php echo $this->get_field_name( $value_name ); ?>" type="text" value="1" <?php echo ( $value ) ? 'checked':'' ?>>
 				<?php } ?>
-			</select>
-		<?php } ?>
+				<?php if ( !$hide_labels ) _e( (($show_key)?'Value':$friendly_name) . (( $type != 'checkbox' ) ? ':' : '') ); ?>
 
-		</label>
+				<?php if ( $type == 'text' || $type == 'number' ) { ?>
+					<input class="widefat" id="<?php echo $this->get_field_id( $value_name ); ?>" name="<?php echo $this->get_field_name( $value_name ); ?>" type="<?php echo $type ?>" value="<?php echo esc_attr( $value ); ?>">
+				<?php } elseif ( $type == 'textarea' ) { ?>
+					<textarea class="widefat" id="<?php echo $this->get_field_id( $value_name ); ?>" name="<?php echo $this->get_field_name( $value_name ); ?>"><?php echo esc_attr( $value ); ?></textarea>
+				<?php } elseif ( $type == 'select' ) { ?>
+					<select  id="<?php echo $this->get_field_id( $value_name ); ?>" name="<?php echo $this->get_field_name( $value_name ); ?>">
+						<?php foreach ( $wordlet->default as $key => $default ) { ?>
+							<option value="<?php echo esc_attr( $key ); ?>" <?php echo ( $key == $value )?'selected':'' ?>><?php echo esc_attr( $default ); ?></option>
+						<?php } ?>
+					</select>
+				<?php } ?>
+			</label>
+		<?php } ?>
 		<?php if ( $description && !$hide_labels ) { ?>
 			<i><?php echo $description ?></i>
 		<?php } ?>
@@ -328,15 +373,25 @@ class Wordlets_Widget extends WP_Widget {
 		$value_prefix = $this->_file['name'] . '__' . $name;
 		for ( $i = 0; $i < 100; $i++ ) {
 			$value_name = $value_prefix . '__' . $i . '__value';
-			$key_name = $value_prefix . '__' . $i . '__key';
-			if ( isset($this->_instance[$value_name]) && isset($this->_instance[$key_name]) ) {
-				$values[] = new Wordlets_Wordlet_Value( __( $this->_instance[$key_name], 'text_domain' ), __( $this->_instance[$value_name], 'text_domain' ) );
+
+			if ( isset($this->_instance[$value_name]) ) {
+				$extras = array();
+				foreach ( $this->extra_names as $name ) {
+					$extra_name = $value_prefix . '__' . $i . '__' . $name;
+					if ( isset($this->_instance[$extra_name]) ) {
+						$extras[$name] = __( $this->_instance[$extra_name], 'text_domain' );
+					}
+				}
+
+				$values[] = new Wordlets_Wordlet_Value( __( $this->_instance[$value_name], 'text_domain' ), $extras );
 			} elseif ( isset($this->_instance[$value_name]) ) {
 				$values[] = __( $this->_instance[$value_name], 'text_domain' );
 			} else {
 				return $values;
 			}
 		}
+
+		return $values;
 	}
 
 	public static $WordletFiles = null;
@@ -384,7 +439,7 @@ class Wordlets_Widget extends WP_Widget {
 				foreach ( $files as $file ) {
 					if ( preg_match('/^wordlets\-(.+)\.php$/', $file, $matches) || preg_match('/^(.+)\.php$/', $file, $matches) ) {
 						$name = $matches[1];
-						$wordlets_files[$name] = $this->_parse_file($tpl_dir . DIRECTORY_SEPARATOR . $file);
+						$wordlets_files[$name] = $this->_parse_file($tpl_dir . DIRECTORY_SEPARATOR . 'wordlets' . DIRECTORY_SEPARATOR . $file);
 						$wordlets_files[$name]['name'] = $name;
 					}
 				}
@@ -423,7 +478,7 @@ class Wordlets_Widget extends WP_Widget {
 				// Don't override wordlets
 				// TODO: Check to see if wordlet has more info?
 				if ( !isset($wordlets[$wordlet->name]) ) {
-					if ( $matches[1][$key] == 'wordlet_array' ) {
+					if ( $matches[1][$key] == 'wordlet_array' || $matches[1][$key] == 'wa' ) {
 						$wordlet->is_array = 1;
 					}
 					$wordlets[$wordlet->name] = $wordlet;
@@ -464,10 +519,12 @@ class Wordlets_Wordlet {
 	public $description;
 	public $value;
 	public $is_array = false;
+	public $is_image = false;
 
 	public function __construct($name, $default = null, $label = null, $description = null) {
 		$this->name = $name;
 		$this->default = $default;
+		if ( $default == '[image]' ) $this->is_image = true;
 		$this->label = $label;
 		$this->description = $description;
 	}
@@ -481,15 +538,24 @@ class Wordlets_Wordlet {
  */
 
 class Wordlets_Wordlet_Value {
-	public $key;
 	public $value;
-	public function __construct($key, $value) {
-		$this->key = $key;
+	public $extras;
+
+	public function __construct($value, $extras) {
 		$this->value = $value;
+		$this->extras = $extras;
 	}
 
 	public function __toString() {
 		return '' . $this->value;
+	}
+
+	public function __get($name) {
+		if ( isset($this->extras[$name]) ) {
+			return $this->extras[$name];
+		}
+
+		return '';
 	}
 }
 

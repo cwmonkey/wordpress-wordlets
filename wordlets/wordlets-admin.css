@@ -2,6 +2,16 @@
 	display: none;
 }
 
+.wordlet-widget-set fieldset {
+	padding: 0 .5em;
+	background: #eee;
+}
+
+.wordlet-widget-set fieldset fieldset {
+	padding: 0 .5em;
+	border: 1px solid #ccc;
+}
+
 .wordlet-widget-set.active {
 	display: block;
 }

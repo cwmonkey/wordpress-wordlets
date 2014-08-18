@@ -15,3 +15,7 @@
 .wordlet-widget-set.active {
 	display: block;
 }
+
+.wordlets-widget-wrapper select {
+	max-width: 100%;
+}

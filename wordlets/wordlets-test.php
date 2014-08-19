@@ -7,6 +7,16 @@
 
 ?>
 
+<? foreach ( wordlet_array('images', array('src' => '[image]', 'alt' => '', 'link' => ''), 'Images') as $image): ?>
+	<? if ( $image->link ): ?>
+		<a href="<?=$image->link ?>">
+			<img src="<?=$image->src ?>" alt="<?-$image->alt ?>">
+		</a>
+	<? else: ?>
+		<img src="<?=$image->src ?>" alt="<?-$image->alt ?>">
+	<? endif ?>
+<? endforeach ?>
+
 <div class="test <?=wordlet('style', array('small', 'medium', 'big'), 'Style', 'Adjusts the look of the form') ?>">
 	<h2 class="headline"><?=wordlet('title', 'Sign up for things', 'Title', 'Above the form') ?></h2>
 
@@ -15,7 +25,7 @@
 	<? endif ?>
 
 	<form action="http://example.com/some-remote-site">
-		<? foreach ( wordlet_array('tracking-vars', '', 'Tracking Variables', 'Key = name, Value = value, as in name="utm-source" value="blog"') as $input ): ?>
+		<? foreach ( wordlet_array('tracking-vars', array('name' => '', 'value' => ''), 'Tracking Variables', 'Key = name, Value = value, as in name="utm-source" value="blog"') as $input ): ?>
 			<input type="hidden" name="<?=$input->key ?>" value="<?=$input->value ?>">
 		<? endforeach ?>
 
@@ -27,7 +37,7 @@
 			<label for="test-email"><?=wordlet('required-label') ?> <?=wordlet('email-label', 'Input your email', 'Email Label') ?></label>
 			<input type="email" name="email" id="test-email">
 		</p>
-		<? if ( wordlet('show_hear', true, 'Show "Hear about us" dropdown') && ($options = wordlet_array('hear-options', 'Option', '"Hear about us" options')) ): ?>
+		<? if ( wordlet('show_hear', true, 'Show "Hear about us" dropdown') && ($options = wordlet_array('hear-options', '', '"Hear about us" options')) ): ?>
 			<p class="input select">
 				<label for="test-hear"><?=wordlet('hear-label', 'How did you hear about us?', 'Hear about us Label') ?></label>
 				<select name="email" id="test-hear">

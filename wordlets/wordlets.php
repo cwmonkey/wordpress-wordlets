@@ -145,7 +145,7 @@ class Wordlets_Widget extends WP_Widget {
 		$loops = 0;
 		foreach ( $wordlets_files as $fname => $info ) {
 			?>
-			<fieldset class="wordlet-widget-set <?php echo ( (!$instance['template'] && $loops) || ($fname != $instance['template']) )?'':'active'; ?>" data-template="<?php echo esc_attr( $fname ); ?>">
+			<fieldset class="wordlet-widget-set <?php echo ( (!isset($instance['template']) && $loops) || (isset($instance['template']) && $fname != $instance['template']) )?'':'active'; ?>" data-template="<?php echo esc_attr( $fname ); ?>">
 			<?php
 			foreach ( $info['wordlets'] as $wname => $wordlet ) {
 				$friendly_name = $wname;
@@ -204,36 +204,39 @@ class Wordlets_Widget extends WP_Widget {
 
 		$file = $this->_get_wordlet_files($instance['template']);
 
+		if ( !isset($file['wordlets']) ) return $instance;
+
 		foreach ( $file['wordlets'] as $wname => $wordlet ) {
+			$value_prefix = $file['name'] . '__' . $wname;
 			if ( $wordlet->is_array ) {
-				$value_prefix = $file['name'] . '__' . $wname;
 				$k = 0;
 				for ( $i = 0; $i < 100; $i++ ) {
-					$value_name = $value_prefix . '__' . $i . '__value';
-					if ( isset($new_instance[$value_name]) ) {
-						if ( $new_instance[$value_name] ) {
-							$new_value_name = $value_prefix . '__' . $k . '__value';
-							$instance[$new_value_name] = ( ! empty( $new_instance[$value_name] ) ) ? $new_instance[$value_name] : '';
-							foreach ( $this->extra_names as $name ) {
-								$extra_name = $value_prefix . '__' . $i . '__' . $name;
-								if ( isset($new_instance[$extra_name]) ) {
-									$new_extra_name = $value_prefix . '__' . $k . '__' . $name;
-									$instance[$new_extra_name] = ( ! empty( $new_instance[$extra_name] ) ) ? $new_instance[$extra_name] : '';
-								}
-							}
-							$k++;
-						}
+					$has_something = false;
+					$value_name_prefix = $value_prefix . '__' . $i;
+
+					if ( is_array($wordlet->default) && $this->_is_assoc($wordlet->default) ) {
+						$names = $wordlet->default;
 					} else {
-						break;
+						$names = array('value' => $wordlet->default);
+					}
+
+					// If all values are empty, delete it
+					foreach ( $names as $name => $def ) {
+						$value_name = $value_name_prefix . '__' . $name;
+						if ( ! empty( $new_instance[$value_name] ) ) {
+							$has_something = true;
+							break;
+						}
+					}
+
+					if ( $has_something ) {
+						$new_value_name_prefix = $value_prefix . '__' . $k;
+						$instance = $this->_update_instance( $instance, $new_instance, $value_name_prefix, $wordlet->default, $new_value_name_prefix );
+						$k++;
 					}
 				}
 			} else {
-				$value_name = $file['name'] . '__' . $wname . '__value';
-				$instance[$value_name] = ( ! empty( $new_instance[$value_name] ) ) ? $new_instance[$value_name] : '';
-				foreach ( $extra_names as $name ) {
-					$extra_name = $file['name'] . '__' . $wname . '__' . $name;
-					$instance[$extra_name] = ( ! empty( $new_instance[$extra_name] ) ) ? $new_instance[$extra_name] : '';
-				}
+				$instance = $this->_update_instance( $instance, $new_instance, $value_prefix, $wordlet->default );
 			}
 		}
 
@@ -242,115 +245,133 @@ class Wordlets_Widget extends WP_Widget {
 
 	/* Custom methods */
 
-	private $extra_names = array('key', 'alt', 'link');
+	private function _update_instance( $instance, $new_instance, $value_prefix, $default, $new_value_prefix = '' ) {
+		$names = array();
+		if ( is_array($default) && $this->_is_assoc($default) ) {
+			$names = $default;
+		} else {
+			$names = array('value' => $default);
+		}
+
+		foreach ( $names as $name => $def ) {
+			$old_value_name = $value_prefix . '__' . $name;
+			if ( $new_value_prefix ) {
+				$new_value_name = $new_value_prefix . '__' . $name;
+			} else {
+				$new_value_name = $old_value_name;
+			}
+
+			$instance[$new_value_name] = ( ! empty( $new_instance[$old_value_name] ) ) ? $new_instance[$old_value_name] : '';
+		}
+
+		return $instance;
+	}
+
+	private function _is_assoc( $arr ) {
+		return array_keys($arr) !== range(0, count($arr) - 1);
+	}
+
 	private $_file;
 	private $_instance;
 	private $_keys = array('name', 'default', 'friendly_name', 'description');
+
+	private function _get_type($default) {
+		$type = 'text';
+
+		// Determine input type
+		if ( is_array($default) ) {
+			$type = 'select';
+		} elseif ( $default === '[image]' ) {
+			$type = 'image';
+		} elseif ( preg_match("/\n/s", $default) ) {
+			$type = 'textarea';
+		} elseif ( is_int($default) ) {
+			$type = 'number';
+		} elseif ( is_bool($default) ) {
+			$type = 'checkbox';
+		}
+
+		return $type;
+	}
+
+	/**
+	 * Render wordlet admin input values.
+	 */
+
+	private function _input($value_prefix, $friendly_name, $wordlet, $instance, $use_default = true, $show_key = false, $hide_labels = false) {
+		if ( is_array($wordlet->default) && $this->_is_assoc($wordlet->default) ) {
+			?><fieldset><?php
+			foreach ( $wordlet->default as $name => $default ) {
+				$type = $this->_get_type($default);
+				if ( $type == 'image' ) $default = '';
+				// TODO: Make this configurable
+				$friendly_name = $name;
+				$this->_render_input($instance, $value_prefix, $friendly_name, $name, $type, $default);
+			}
+			?></fieldset><?php
+		} else {
+			$description = '';
+			if ( isset($wordlet->description) ) {
+				$description = $wordlet->description;
+			}
+
+			$default = $wordlet->default;
+			$type = $this->_get_type($default);
+
+			if ( $type == 'image' ) $default = '';
+
+			$this->_render_input($instance, $value_prefix, $friendly_name, 'value', $type, $default);
+		}
+	}
 
 	/**
 	 * Render wordlet admin input value.
 	 */
 
-	private function _input($value_prefix, $friendly_name, $wordlet, $instance, $use_default = true, $show_key = false, $hide_labels = false) {
-		$value_name = $value_prefix . '__value';
-		$alt_value_name = $value_prefix . '__alt';
-		$link_value_name = $value_prefix . '__link';
-		$value = '';
-		$alt_value = '';
-		$link_value = '';
-		$type = 'text';
+	private function _render_input($instance, $value_prefix, $friendly_name, $name, $type, $default = '', $description = '') {
+		$hide_labels = false; // TODO: See if I need to get rid of this.
+		$show_key = true; // TODO: See if I need to get rid of this.
+
+		$value_name = $value_prefix . '__' . $name;
 
 		if ( isset($instance[$value_name]) ) {
 			$value = $instance[$value_name];
-		} elseif ( $use_default && isset($wordlet->default) && !$wordlet->is_image ) {
-			$value = $wordlet->default;
-		}
-
-		// Determine input type
-		if ( is_array($wordlet->default) ) {
-			$type = 'select';
-		} elseif ( $wordlet->is_image ) {
-			$type = 'image';
-			if ( isset($instance[$alt_value_name]) ) {
-				$alt_value = $instance[$alt_value_name];
-				$link_value = $instance[$link_value_name];
-			}
-		} elseif ( preg_match("/\n/s", $wordlet->default) ) {
-			$type = 'textarea';
-		} elseif ( is_int($wordlet->default) ) {
-			$type = 'number';
-		} elseif ( is_bool($wordlet->default) ) {
-			$type = 'checkbox';
-		}
-
-		$description = '';
-		if ( isset($wordlet->description) ) {
-			$description = $wordlet->description;
+		} else {
+			$value = $default;
 		}
 
 		?>
 		<p>
-		<?php if ( $type == 'image' ) { ?>
-			<fieldset>
-				<p>
-					<label for="<?php echo $this->get_field_id( $value_name ); ?>">
-						Image URL:
-						<input class="widefat" id="<?php echo $this->get_field_id( $value_name ); ?>" name="<?php echo $this->get_field_name( $value_name ); ?>" type="text" value="<?php echo esc_attr( $value ); ?>">
-					</label>
-					<input type="button" id="<?php echo $this->get_field_id( $value_name ); ?>-set" value="<?php _e( 'Upload Image', 'text_domain' ); ?>" class="button wordlets-widget-image-set" data-target="#<?php echo $this->get_field_id( $value_name ); ?>" data-alt="#<?php echo $this->get_field_id( $alt_value_name ); ?>" data-image="#<?php echo $this->get_field_id( $value_name ); ?>-image">
-					<img style="max-width:100%;max-height:100px;" id="<?php echo $this->get_field_id( $value_name ); ?>-image" src="<?php echo esc_attr( (($value)?$value:'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7') ); ?>">
-				</p>
-				<p>
-					<label for="<?php echo $this->get_field_id( $alt_value_name ); ?>">
-						Alt:
-						<input class="widefat" id="<?php echo $this->get_field_id( $alt_value_name ); ?>" name="<?php echo $this->get_field_name( $alt_value_name ); ?>" type="text" value="<?php echo esc_attr( $alt_value ); ?>">
-					</label>
-				</p>
-				<p>
-					<label for="<?php echo $this->get_field_id( $link_value_name ); ?>">
-						Link:
-						<input class="widefat" id="<?php echo $this->get_field_id( $link_value_name ); ?>" name="<?php echo $this->get_field_name( $link_value_name ); ?>" type="text" value="<?php echo esc_attr( $link_value ); ?>">
-					</label>
-				</p>
-			</fieldset>
-		<?php } else { ?>
-			<?php
-			if ( $show_key ) {
-				$key_name = $value_prefix . '__key';
-				$key = $friendly_name;
-				if ( isset($instance[$key_name]) ) {
-					$key = $instance[$key_name];
-				}
-				?>
-				<label for="<?php echo $this->get_field_id( $key_name ); ?>" style="<?php echo ($show_key)?'display:inline-block;width:30%;margin-right:1em':''; ?>">
-					<?php if ( !$hide_labels ) echo __( 'Key:', 'text_domain' ); ?>
-					<input class="widefat" id="<?php echo $this->get_field_id( $key_name ); ?>" name="<?php echo $this->get_field_name( $key_name ); ?>" type="text" value="<?php echo esc_attr( $key ); ?>">
+			<?php if ( $type == 'image' ) { ?>
+				<label for="<?php echo $this->get_field_id( $value_name ); ?>">
+					<?php echo __( 'Image URL:', 'text_domain' ); ?>
+					<input class="widefat" id="<?php echo $this->get_field_id( $value_name ); ?>" name="<?php echo $this->get_field_name( $value_name ); ?>" type="text" value="<?php echo esc_attr( $value ); ?>">
 				</label>
-			<?php
-			}
-			?>
-			<label for="<?php echo $this->get_field_id( $value_name ); ?>" style="<?php echo ($show_key)?'display:inline-block;width:60%':''; ?>">
-				<?php if ( $type == 'checkbox' ) { ?>
-					<input type="checkbox" id="<?php echo $this->get_field_id( $value_name ); ?>" name="<?php echo $this->get_field_name( $value_name ); ?>" type="text" value="1" <?php echo ( $value ) ? 'checked':'' ?>>
-				<?php } ?>
-				<?php if ( !$hide_labels ) _e( (($show_key)?'Value':$friendly_name) . (( $type != 'checkbox' ) ? ':' : '') ); ?>
+				<input type="button" id="<?php echo $this->get_field_id( $value_name ); ?>-set" value="<?php _e( 'Upload Image', 'text_domain' ); ?>" class="button wordlets-widget-image-set" data-target="#<?php echo $this->get_field_id( $value_name ); ?>" data-alt="#<?php echo $this->get_field_id( $value_prefix . '__alt' ); ?>" data-image="#<?php echo $this->get_field_id( $value_name ); ?>-image">
+				<img style="max-width:100%;max-height:100px;" id="<?php echo $this->get_field_id( $value_name ); ?>-image" src="<?php echo esc_attr( (($value)?$value:'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7') ); ?>">
+			<?php } else { ?>
+				<label for="<?php echo $this->get_field_id( $value_name ); ?>" style="<?php echo ($show_key)?'display:inline-block;width:60%':''; ?>">
+					<?php if ( $type == 'checkbox' ) { ?>
+						<input type="checkbox" id="<?php echo $this->get_field_id( $value_name ); ?>" name="<?php echo $this->get_field_name( $value_name ); ?>" type="text" value="1" <?php echo ( $value ) ? 'checked':'' ?>>
+					<?php } ?>
+					<?php if ( !$hide_labels ) _e( (($show_key)?'Value':$friendly_name) . (( $type != 'checkbox' ) ? ':' : '') ); ?>
 
-				<?php if ( $type == 'text' || $type == 'number' ) { ?>
-					<input class="widefat" id="<?php echo $this->get_field_id( $value_name ); ?>" name="<?php echo $this->get_field_name( $value_name ); ?>" type="<?php echo $type ?>" value="<?php echo esc_attr( $value ); ?>">
-				<?php } elseif ( $type == 'textarea' ) { ?>
-					<textarea class="widefat" id="<?php echo $this->get_field_id( $value_name ); ?>" name="<?php echo $this->get_field_name( $value_name ); ?>"><?php echo esc_attr( $value ); ?></textarea>
-				<?php } elseif ( $type == 'select' ) { ?>
-					<select  id="<?php echo $this->get_field_id( $value_name ); ?>" name="<?php echo $this->get_field_name( $value_name ); ?>">
-						<?php foreach ( $wordlet->default as $key => $default ) { ?>
-							<option value="<?php echo esc_attr( $key ); ?>" <?php echo ( $key == $value )?'selected':'' ?>><?php echo esc_attr( $default ); ?></option>
-						<?php } ?>
-					</select>
-				<?php } ?>
-			</label>
-		<?php } ?>
-		<?php if ( $description && !$hide_labels ) { ?>
-			<i><?php echo $description ?></i>
-		<?php } ?>
+					<?php if ( $type == 'text' || $type == 'number' ) { ?>
+						<input class="widefat" id="<?php echo $this->get_field_id( $value_name ); ?>" name="<?php echo $this->get_field_name( $value_name ); ?>" type="<?php echo $type ?>" value="<?php echo esc_attr( $value ); ?>">
+					<?php } elseif ( $type == 'textarea' ) { ?>
+						<textarea class="widefat" id="<?php echo $this->get_field_id( $value_name ); ?>" name="<?php echo $this->get_field_name( $value_name ); ?>"><?php echo esc_attr( $value ); ?></textarea>
+					<?php } elseif ( $type == 'select' ) { ?>
+						<select  id="<?php echo $this->get_field_id( $value_name ); ?>" name="<?php echo $this->get_field_name( $value_name ); ?>">
+							<?php foreach ( $default as $key => $default ) { ?>
+								<option value="<?php echo esc_attr( $key ); ?>" <?php echo ( $key == $value )?'selected':'' ?>><?php echo esc_attr( $default ); ?></option>
+							<?php } ?>
+						</select>
+					<?php } ?>
+				</label>
+			<?php } ?>
+			<?php if ( $description && !$hide_labels ) { ?>
+				<i><?php echo $description ?></i>
+			<?php } ?>
 		</p>
 		<?php
 	}
@@ -370,24 +391,42 @@ class Wordlets_Widget extends WP_Widget {
 
 	public function get_wordlet_array($name) {
 		$values = array();
+
+		if ( !isset($this->_file['wordlets']) || !isset($this->_file['wordlets'][$name]) ) return $values;
+
+		$wordlet = $this->_file['wordlets'][$name];
+
+		if ( !$wordlet->is_array ) return $values;
+
 		$value_prefix = $this->_file['name'] . '__' . $name;
+
 		for ( $i = 0; $i < 100; $i++ ) {
-			$value_name = $value_prefix . '__' . $i . '__value';
+			$instance_values = array();
+			$value_name_prefix = $value_prefix . '__' . $i;
 
-			if ( isset($this->_instance[$value_name]) ) {
-				$extras = array();
-				foreach ( $this->extra_names as $name ) {
-					$extra_name = $value_prefix . '__' . $i . '__' . $name;
-					if ( isset($this->_instance[$extra_name]) ) {
-						$extras[$name] = __( $this->_instance[$extra_name], 'text_domain' );
-					}
-				}
-
-				$values[] = new Wordlets_Wordlet_Value( __( $this->_instance[$value_name], 'text_domain' ), $extras );
-			} elseif ( isset($this->_instance[$value_name]) ) {
-				$values[] = __( $this->_instance[$value_name], 'text_domain' );
+			if ( is_array($wordlet->default) && $this->_is_assoc($wordlet->default) ) {
+				$names = $wordlet->default;
 			} else {
-				return $values;
+				$names = array('value' => $wordlet->default);
+			}
+
+			$has_something = false;
+			// If all values are empty, delete it
+			foreach ( $names as $name => $def ) {
+				$value_name = $value_name_prefix . '__' . $name;
+
+				if ( isset($this->_instance[$value_name]) ) {
+					$instance_values[$name] = __( $this->_instance[$value_name], 'text_domain' );
+					$has_something = true;
+				} else {
+					$instance_values[$name] = '';
+				}
+			}
+
+			if ( $has_something ) {
+				$values[] = new Wordlets_Wordlet_Value( $instance_values );
+			} else {
+				break;
 			}
 		}
 
@@ -524,7 +563,7 @@ class Wordlets_Wordlet {
 	public function __construct($name, $default = null, $label = null, $description = null) {
 		$this->name = $name;
 		$this->default = $default;
-		if ( $default == '[image]' ) $this->is_image = true;
+		if ( $default === '[image]' ) $this->is_image = true;
 		$this->label = $label;
 		$this->description = $description;
 	}
@@ -538,21 +577,21 @@ class Wordlets_Wordlet {
  */
 
 class Wordlets_Wordlet_Value {
-	public $value;
-	public $extras;
+	public $values;
 
-	public function __construct($value, $extras) {
-		$this->value = $value;
-		$this->extras = $extras;
+	public function __construct($values) {
+		$this->values = $values;
 	}
 
 	public function __toString() {
-		return '' . $this->value;
+		$keys = array_keys($this->values);
+		$value = $this->values[$keys[0]];
+		return '' . $value;
 	}
 
 	public function __get($name) {
-		if ( isset($this->extras[$name]) ) {
-			return $this->extras[$name];
+		if ( isset($this->values[$name]) ) {
+			return $this->values[$name];
 		}
 
 		return '';

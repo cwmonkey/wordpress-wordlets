@@ -10,6 +10,7 @@
 .wordlet-widget-set fieldset fieldset {
 	padding: 0 .5em;
 	border: 1px solid #ccc;
+	margin: .5em 0;
 }
 
 .wordlet-widget-set.active {

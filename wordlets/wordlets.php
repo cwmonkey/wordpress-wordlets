@@ -80,6 +80,7 @@ class Wordlets_Widget extends WP_Widget {
 			echo $args['before_title'] . $title . $args['after_title'];
 		}
 		echo __( 'Hello, World!', 'text_domain' );*/
+
 		include($file['props']['file']);
 
 		if ( current_user_can( 'manage_options' ) ) {
@@ -330,7 +331,7 @@ class Wordlets_Widget extends WP_Widget {
 
 	private function _render_input($instance, $value_prefix, $friendly_name, $name, $type, $default = '', $description = '') {
 		$hide_labels = false; // TODO: See if I need to get rid of this.
-		$show_key = true; // TODO: See if I need to get rid of this.
+		$show_key = false; // TODO: See if I need to get rid of this.
 
 		$value_name = $value_prefix . '__' . $name;
 

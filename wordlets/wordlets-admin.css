@@ -5,6 +5,7 @@
 .wordlet-widget-set fieldset {
 	padding: 0 .5em;
 	background: #eee;
+	margin-bottom: .5em;
 }
 
 .wordlet-widget-set fieldset fieldset {

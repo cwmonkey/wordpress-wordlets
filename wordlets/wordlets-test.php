@@ -8,8 +8,9 @@
  * @name        Test
  * @description Test Wordlet Template
  *
- * @wordlet type     $name ("Default" | { type $property "Default", ... } | { value = Option } ) "Label" "Long Description"
+ * @wordlet type     $name ("Default" | { type $property "Default", ... } | { value = Option | Option | [tags] } ) "Label" "Long Description"
  *
+ * @wordletArray select $tags { [tags], small = Small, Thing } Tags "Select a tag"
  * @wordlet object   $main_image {
  *     image  $src "" "Image URL",
  *     text   $alt "" "Alt",
@@ -47,15 +48,19 @@
 
 ?>
 
-<img src="<?=$main_image->src ?>" alt="<?=$main_image->alt ?>" width="<?=$main_image->width ?>" height="<?=$main_image->height ?>">
+<? foreach ( $tags as $tag ): ?>
+	Tag: <?=$tag->name ?>
+<? endforeach ?>
 
+<img src="<?=$main_image->src ?>" alt="<?=$main_image->alt ?>" width="<?=$main_image->width ?>">
+<hr>
 <? foreach ( $images as $image): ?>
 	<? if ( $image->link ): ?>
 		<a href="<?=$image->link ?>">
-			<img src="<?=$image->src ?>" alt="<?=$image->alt ?>" width="<?=$image->width ?>" height="<?=$image->height ?>">
+			<img src="<?=$image->src ?>" alt="<?=$image->alt ?>" width="<?=$image->width ?>">
 		</a>
 	<? else: ?>
-		<img src="<?=$image->src ?>" alt="<?=$image->alt ?>" width="<?=$image->width ?>" height="<?=$image->height ?>">
+		<img src="<?=$image->src ?>" alt="<?=$image->alt ?>" width="<?=$image->width ?>">
 	<? endif ?>
 <? endforeach ?>
 

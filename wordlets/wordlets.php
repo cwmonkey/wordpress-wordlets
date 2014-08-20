@@ -360,8 +360,15 @@ class Wordlets_Widget extends WP_Widget {
 						<textarea class="widefat" id="<?php echo $this->get_field_id( $value_name ); ?>" name="<?php echo $this->get_field_name( $value_name ); ?>"><?php echo esc_attr( $value ); ?></textarea>
 					<?php } elseif ( $type == 'select' ) { ?>
 						<select  id="<?php echo $this->get_field_id( $value_name ); ?>" name="<?php echo $this->get_field_name( $value_name ); ?>">
-							<?php foreach ( $default as $key => $default ) { ?>
-								<option value="<?php echo esc_attr( $key ); ?>" <?php echo ( $key == $value )?'selected':'' ?>><?php echo esc_attr( $default ); ?></option>
+							<option value=""><?php echo esc_attr( (($description)?$description:'- Select One -') ); ?></option>
+							<?php foreach ( $default as $key => $val ) { ?>
+								<?php if ( $val == '[tags]' ) { ?>
+									<?php foreach ( get_tags() as $tag ) { ?>
+										<option value="<?php echo esc_attr( $val . $tag->term_id ); ?>" <?php echo ( $val . $tag->term_id == $value )?'selected':'' ?>><?php echo esc_attr( $tag->name ); ?></option>
+									<?php } ?>
+								<?php } else { ?>
+									<option value="<?php echo esc_attr( $key ); ?>" <?php echo ( $key == $value )?'selected':'' ?>><?php echo esc_attr( $val ); ?></option>
+								<?php } ?>
 							<?php } ?>
 						</select>
 					<?php } ?>
@@ -604,14 +611,14 @@ class Wordlets_Wordlet implements Iterator {
 			//2 value
 			//3 text
 			//4 Text
-			preg_match_all('/[\{\r\n\s]*((.+?)\s*=\s*([^,\}\r\n]+))|([^,\{\}\=\r\n]+)\s*[,\}\r\n]/i', $default, $matches);
+			preg_match_all('/[\{\r\n\s]*(([^,]+?)\s*=\s*([^,\}\r\n]+))|([^,\{\}\=\r\n]+)\s*[,\}\r\n]/i', $default, $matches);
 
 			$default = array();
 			foreach ( $matches[2] as $key => $val ) {
 				if ( !empty($val) ) {
 					$default[$val] = $matches[3][$key];
 				} else {
-					$default[$matches[4][$key]] = $matches[4][$key];
+					$default[$matches[4][$key]] = trim($matches[4][$key]);
 				}
 			}
 		}
@@ -627,7 +634,8 @@ class Wordlets_Wordlet implements Iterator {
 		if ( $this->is_array ) {
 			return Wordlets_Widget::GetValue($this, $name, $this->position);
 		} else {
-			return Wordlets_Widget::GetValue($this, $name);
+			$value = Wordlets_Widget::GetValue($this, $name);
+			return $value;
 		}
 	}
 
@@ -648,8 +656,17 @@ class Wordlets_Wordlet implements Iterator {
 	}
 
 	function current() {
+		if ( $this->is_array ) {
+			$value = Wordlets_Widget::GetValue($this, 'value', $this->position);
+		} else {
+			$value = Wordlets_Widget::GetValue($this, 'value');
+		}
+
+		if ( preg_match('/^\[tags\]([0-9]+)$/', $value, $matches) ) {
+			return get_tag($matches[1]);
+		}
+
 		return $this;
-		//return $this->array[$this->position];
 	}
 
 	function key() {

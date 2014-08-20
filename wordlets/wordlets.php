@@ -382,8 +382,34 @@ class Wordlets_Widget extends WP_Widget {
 	 */
 
 	public function get_wordlet($name) {
-		$value_name = $this->_file['name'] . '__' . $name . '__value';
-		if ( isset($this->_instance[$value_name]) ) return __( $this->_instance[$value_name], 'text_domain' );
+		if ( !isset($this->_file['wordlets']) || !isset($this->_file['wordlets'][$name]) ) return $values;
+
+		$wordlet = $this->_file['wordlets'][$name];
+
+		if ( is_array($wordlet->default) && $this->_is_assoc($wordlet->default) ) {
+			$names = $wordlet->default;
+		} else {
+			$names = array('value' => $wordlet->default);
+		}
+
+		$value_prefix = $this->_file['name'] . '__' . $name;
+		$instance_values = array();
+		foreach ( $names as $name => $def ) {
+			$value_name = $value_prefix . '__' . $name;
+
+			if ( isset($this->_instance[$value_name]) ) {
+				$instance_values[$name] = __( $this->_instance[$value_name], 'text_domain' );
+				$has_something = true;
+			} else {
+				$instance_values[$name] = '';
+			}
+		}
+
+		if ( $has_something ) {
+			return new Wordlets_Wordlet_Value( $instance_values );
+		} else {
+			return null;
+		}
 	}
 
 	/**

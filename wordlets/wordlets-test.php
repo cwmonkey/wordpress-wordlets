@@ -47,15 +47,15 @@
 
 ?>
 
-<img src="<?=$main_image->src ?>" alt="<?=$main_image->alt ?>" width="<?=$main_image->width ?>" alt="<?=$main_image->height ?>">
+<img src="<?=$main_image->src ?>" alt="<?=$main_image->alt ?>" width="<?=$main_image->width ?>" height="<?=$main_image->height ?>">
 
 <? foreach ( $images as $image): ?>
 	<? if ( $image->link ): ?>
 		<a href="<?=$image->link ?>">
-			<img src="<?=$image->src ?>" alt="<?=$image->alt ?>" width="<?=$image->width ?>" alt="<?=$image->height ?>">
+			<img src="<?=$image->src ?>" alt="<?=$image->alt ?>" width="<?=$image->width ?>" height="<?=$image->height ?>">
 		</a>
 	<? else: ?>
-		<img src="<?=$image->src ?>" alt="<?=$image->alt ?>" width="<?=$image->width ?>" alt="<?=$image->height ?>">
+		<img src="<?=$image->src ?>" alt="<?=$image->alt ?>" width="<?=$image->width ?>" height="<?=$image->height ?>">
 	<? endif ?>
 <? endforeach ?>
 

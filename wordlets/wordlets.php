@@ -97,8 +97,13 @@ class Wordlets_Widget extends WP_Widget {
 	 * @param array $instance Previously saved values from database.
 	 */
 	public function form( $instance ) {
+		$wordlets_files = $this->_get_wordlet_files();
+
 		if ( isset( $instance[ 'title' ] ) ) {
 			$title = $instance[ 'title' ];
+		} elseif ( count($wordlets_files) ) {
+			$props = $wordlets_files[array_keys($wordlets_files)[0]]['props'];
+			$title = __( $props['name'] . ((isset($props['description']))?' (' . $props['description'] . ')':''), 'text_domain' );
 		} else {
 			$title = __( 'New Wordlet', 'text_domain' );
 		}
@@ -109,8 +114,6 @@ class Wordlets_Widget extends WP_Widget {
 		<input class="widefat wordlet-widget-title" id="<?php echo $this->get_field_id( 'title' ); ?>" name="<?php echo $this->get_field_name( 'title' ); ?>" type="text" value="<?php echo esc_attr( $title ); ?>">
 		</p>
 		<?php 
-
-		$wordlets_files = $this->_get_wordlet_files();
 
 		?>
 		<p style="border-bottom:1px solid #ccc;padding-bottom:1em">

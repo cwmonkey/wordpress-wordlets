@@ -587,7 +587,6 @@ class Wordlets_Wordlet implements Iterator {
 	public $default;
 	public $label;
 	public $description;
-	public $value;
 	public $is_array;
 
 	public function __construct($name, $type, $default = null, $label = null, $description = null, $is_array = false) {
@@ -678,7 +677,9 @@ class Wordlets_Wordlet implements Iterator {
 	}
 
 	function valid() {
-		return Wordlets_Widget::HasValues($this, $this->position);
+		$valid = Wordlets_Widget::HasValues($this, $this->position);
+
+		return $valid;
 		//return isset($this->array[$this->position]);
 	}	
 }

@@ -75,12 +75,16 @@ $(function() {
 			var send_attachment_bkp = wp.media.editor.send.attachment;
 			var target = $this.data('target');
 			var alt = $this.data('alt');
+			var width = $this.data('width');
+			var height = $this.data('height');
 			var image = $this.data('image');
 			_custom_media = true;
 
 			wp.media.editor.send.attachment = function(props, attachment){
 				if ( _custom_media ) {
 					$(target).val(attachment.url);
+					$(width).val(attachment.width);
+					$(height).val(attachment.height);
 					$(image).attr({src: attachment.url});
 					if ( !$(alt).val() ) $(alt).val(attachment.alt);
 					//$('.custom_media_url').val(attachment.url);

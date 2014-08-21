@@ -8,9 +8,10 @@
  * @name        Test
  * @description Test Wordlet Template
  *
- * @wordlet type     $name ("Default" | { type $property "Default", ... } | { value = Option | Option | [tags] } ) "Label" "Long Description"
+ * @wordlet type     $name ("Default" | { type $property "Default", ... } | { value = Option | Option | [tags|categories] } ) "Label" "Long Description"
  *
  * @wordletArray select $tags { [tags], small = Small, Thing } Tags "Select a tag"
+ * @wordletArray select $categories { [categories] } Categories "Select a category"
  * @wordlet object   $main_image {
  *     image  $src "" "Image URL",
  *     text   $alt "" "Alt",
@@ -48,8 +49,12 @@
 
 ?>
 
+<? foreach ( $categories as $category ): ?>
+	<p>Category: <?=$category->name ?></p>
+<? endforeach ?>
+
 <? foreach ( $tags as $tag ): ?>
-	Tag: <?=$tag->name ?>
+	<p>Tag: <?=$tag->name ?></p>
 <? endforeach ?>
 
 <img src="<?=$main_image->src ?>" alt="<?=$main_image->alt ?>" width="<?=$main_image->width ?>">

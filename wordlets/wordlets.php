@@ -366,6 +366,10 @@ class Wordlets_Widget extends WP_Widget {
 									<?php foreach ( get_tags() as $tag ) { ?>
 										<option value="<?php echo esc_attr( $val . $tag->term_id ); ?>" <?php echo ( $val . $tag->term_id == $value )?'selected':'' ?>><?php echo esc_attr( $tag->name ); ?></option>
 									<?php } ?>
+								<?php } elseif ( $val == '[categories]' ) { ?>
+									<?php foreach ( get_categories() as $category ) { ?>
+										<option value="<?php echo esc_attr( $val . $category->term_id ); ?>" <?php echo ( $val . $category->term_id == $value )?'selected':'' ?>><?php echo esc_attr( $category->name ); ?></option>
+									<?php } ?>
 								<?php } else { ?>
 									<option value="<?php echo esc_attr( $key ); ?>" <?php echo ( $key == $value )?'selected':'' ?>><?php echo esc_attr( $val ); ?></option>
 								<?php } ?>
@@ -663,6 +667,8 @@ class Wordlets_Wordlet implements Iterator {
 
 		if ( preg_match('/^\[tags\]([0-9]+)$/', $value, $matches) ) {
 			return get_tag($matches[1]);
+		} elseif ( preg_match('/^\[categories\]([0-9]+)$/', $value, $matches) ) {
+			return get_category($matches[1]);
 		}
 
 		return $this;

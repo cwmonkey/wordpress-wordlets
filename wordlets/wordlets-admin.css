@@ -2,7 +2,7 @@
 	display: none;
 }
 
-.wordlet-widget-set fieldset {
+/*.wordlet-widget-set fieldset {
 	padding: 0 .5em;
 	background: #eee;
 	margin-bottom: .5em;
@@ -12,6 +12,59 @@
 	padding: 0 .5em;
 	border: 1px solid #ccc;
 	margin: .5em 0;
+}*/
+
+.wordlet-widget-set .wordlet-object {
+	background: #fafafa;
+	border: 1px solid #ccc;
+	padding: .5em .5em 0 .5em;
+	margin-bottom: 1em;
+}
+
+.wordlet-widget-set .wordlet-object legend {
+	margin-bottom: .5em;
+}
+
+.wordlet-widget-set .wordlet-array {
+	background: #fafafa;
+	border: 1px solid #ccc;
+	padding: .5em .5em .5em .5em;
+	margin-bottom: 1em;
+}
+
+.wordlet-widget-set .wordlet-array .wordlet-object {
+	background: transparent;
+	padding: 0;
+	border: none;
+	margin: 0;
+}
+
+.wordlet-widget-set .wordlet-array-item {
+	border: 1px solid #bbb;
+	padding: 1em 2.5em 1px .5em;
+	position: relative;
+	margin-bottom: -1px;
+}
+
+.wordlet-widget-set .wordlet-array-item:last-child {
+	margin-bottom: 0;
+}
+
+.wordlet-widget-set .wordlet-array .wordlet-input,
+.wordlet-widget-set .wordlet-object .wordlet-input {
+	margin: 0 0 1em 0;
+}
+
+.wordlet-widget-set .wordlet-array-item:nth-child(even) {
+	background: #f5f5f5;
+}
+
+.wordlet-widget-set .wordlet-array-item:nth-child(odd) {
+	background: #f0f4ff;
+}
+
+.wordlet-widget-set .wordlet-array-item.ui-sortable-helper {
+	background: #faffd8;
 }
 
 .wordlet-widget-set.active {
@@ -22,3 +75,65 @@
 	max-width: 100%;
 	width: 100%;
 }
+
+.wordlet-widget-set .wordlet-input {
+	position: relative;
+}
+
+.wordlet-widget-set .wordlet-input-image img {
+	display: block;
+}
+
+.wordlet-widget-set .wordlet-input-text input,
+.wordlet-widget-set .wordlet-input-select select,
+.wordlet-widget-set .wordlet-input-number input,
+.wordlet-widget-set .wordlet-input-image input[type="text"],
+.wordlet-widget-set .wordlet-input-textarea textarea {
+	padding-top: 5px;
+	height: auto;
+}
+
+.wordlet-widget-set .wordlet-input-text label,
+.wordlet-widget-set .wordlet-input-number label,
+.wordlet-widget-set .wordlet-input-image label,
+.wordlet-widget-set .wordlet-input-select label,
+.wordlet-widget-set .wordlet-input-textarea label {
+	position: absolute;
+	color: #999;
+	transition: all .2s linear;
+	padding: 5px 5px 3px 5px;
+	left: .25em;
+	border: 1px solid transparent;
+}
+
+.wordlet-widget-set .wordlet-array-item:after {
+	background-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgeD0iMHB4IiB5PSIwcHgiIHdpZHRoPSIzNy41cHgiIGhlaWdodD0iMTAwcHgiIHZpZXdCb3g9IjAgMCAzNy41IDEwMCIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgZW5hYmxlLWJhY2tncm91bmQ9Im5ldyAwIDAgMzcuNSAxMDAiPjxwb2x5Z29uIHBvaW50cz0iMjUsNjIuNSAyNSw4MS4yNSAzNy41LDgxLjI1IDE4Ljc1LDEwMCAwLDgxLjI1IDEyLjUsODEuMjUgMTIuNSw2Mi41ICIgZmlsbD0iIzAxMDEwMSIvPjxwb2x5Z29uIHBvaW50cz0iMTIuNSwzNy41IDEyLjUsMTguNzUgMCwxOC43NSAxOC43NSwwIDM3LjUsMTguNzUgMjUsMTguNzUgMjUsMzcuNSAiIGZpbGw9IiMwMTAxMDEiLz48L3N2Zz4=);
+	background-size: contain;
+	background-repeat: no-repeat;
+	background-position: center top;
+	width: 1.5em;
+	height: 1.5em;
+	content: " ";
+	position: absolute;
+	top: .75em;
+	right: .5em;
+	cursor: ns-resize;
+}
+
+.wordlet-widget-set .wordlet-input-text.wordlet-filled label,
+.wordlet-widget-set .wordlet-input-number.wordlet-filled label,
+.wordlet-widget-set .wordlet-input-image.wordlet-filled label,
+.wordlet-widget-set .wordlet-input-select label,
+.wordlet-widget-set .wordlet-input-textarea.wordlet-filled label {
+	top: -.6em;
+	left: .5em;
+	font-size: .8em;
+	font-weight: bold;
+	color: #0074a2;
+	padding: 2px;
+	background: #fff;
+	border: 1px solid #ccc;
+	line-height: .8;
+	border-radius: 3px
+}
+

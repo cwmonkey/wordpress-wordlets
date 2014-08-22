@@ -82,11 +82,11 @@ $(function() {
 
 			wp.media.editor.send.attachment = function(props, attachment){
 				if ( _custom_media ) {
-					$(target).val(attachment.url);
-					$(width).val(attachment.width);
-					$(height).val(attachment.height);
+					$(target).val(attachment.url).trigger('change');
+					$(width).val(attachment.width).trigger('change');
+					$(height).val(attachment.height).trigger('change');
 					$(image).attr({src: attachment.url});
-					if ( !$(alt).val() ) $(alt).val(attachment.alt);
+					if ( !$(alt).val() ) $(alt).val(attachment.alt).trigger('change');
 					//$('.custom_media_url').val(attachment.url);
 				} else {
 					return _orig_send_attachment.apply( button_id, [props, attachment] );
@@ -95,6 +95,29 @@ $(function() {
 
 			wp.media.editor.open($this);
 		})
+		.delegate('.wordlet-widget-set .wordlet-input-text input, .wordlet-widget-set .wordlet-input-number input, .wordlet-widget-set .wordlet-input-textarea textarea', 'change keydown blur', function(e) {
+			var $this = $(this);
+			var $parent = $this.closest('.wordlet-input');
+			setTimeout(function() {
+				if ( $this.val() === '' ) {
+					$parent.removeClass('wordlet-filled');
+				} else {
+					$parent.addClass('wordlet-filled');
+				}
+			}, 0);
+		})
+		.delegate('.wordlet-array', 'mouseover', function() {
+			var $this = $(this);
+			if ( $this.is('.ui-sortable') ) return;
+			$this.sortable({
+				forcePlaceholderSize: true,
+				//handle: '.wordlet-array-item',
+				start: function(e, ui) {
+					ui.placeholder.height(ui.helper.height());
+				}
+			})
+		})
 		;
+
 });
 })(jQuery);

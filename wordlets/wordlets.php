@@ -349,7 +349,7 @@ class Wordlets_Widget extends WP_Widget {
 		}
 
 		?>
-		<p class="wordlet-input wordlet-input-<?=$type ?> <?=(($value !== '')?'wordlet-filled':'')?>">
+		<p class="wordlet-input wordlet-input-<?php echo $type ?> <?php echo (($value !== '')?'wordlet-filled':'') ?>">
 			<?php if ( $type == 'image' ) { ?>
 				<label for="<?php echo $this->get_field_id( $value_name ); ?>">
 					<?php echo __( $friendly_name, 'text_domain' ); ?>:

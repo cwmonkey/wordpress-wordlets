@@ -584,7 +584,7 @@ class Wordlets_Widget extends WP_Widget {
 			//11 Description
 			if ( preg_match_all('/@wordlet(Array)?\s*([a-z]+)\s+\$([a-z][a-z_0-9]+)\s*(([a-z0-9]+)|("[^"]*")|(\{[^\}]*\}))\s*(([a-z]+)|("[^"]*"))?\s*(([a-z]+)|("[^"]*"))?\s*/is', $comment, $w) ) {
 				foreach ( $w[2] as $key => $type ) {
-					if ( false === array_search($type, Wordlets_Wordlet::$types) ) continue;
+					if ( false === array_search($type, array_keys( $this->types ) ) ) continue;
 
 					$wordlet = new Wordlets_Wordlet($w[3][$key], $w[2][$key], trim($w[4][$key], '"'), trim($w[8][$key], '"'), trim($w[11][$key], '"'), trim($w[1][$key], '"'));
 					$wordlets[$w[3][$key]] = $wordlet;
@@ -628,8 +628,6 @@ class Wordlets_Widget extends WP_Widget {
  */
 
 class Wordlets_Wordlet implements Iterator {
-	public static $types = array('object', 'image', 'text', 'select', 'textarea', 'checkbox');
-
 	public $name;
 	public $type;
 	public $default;

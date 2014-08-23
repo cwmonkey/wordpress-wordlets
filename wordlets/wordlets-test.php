@@ -8,42 +8,42 @@
  * @name        Test
  * @description Test Wordlet Template
  *
- * @wordlet type     $name ("Default" | { type $property "Default", ... } | { value = Option | Option | [tags|categories] } ) "Label" "Long Description"
+ * @wordlet      type     $name ("Default" | { type $property "Default", ... } | { value = Option | Option | [tags|categories] } ) "Label" "Long Description"
  *
- * @wordletArray select $tags { [tags], small = Small, Thing } Tags "Select a tag"
- * @wordletArray select $categories { [categories] } Categories "Select a category"
- * @wordlet object   $main_image {
- *     image  $src "" "Image URL",
- *     text   $alt "" "Alt",
- *     number $width "" "Width",
- *     number $height "" "Height"
- * } "Main Image"
+ * @wordletArray select   $tags { [tags], small = Small, Thing } Tags "Select a tag"
+ * @wordletArray select   $categories { [categories] } Categories "Select a category"
+ * @wordlet      object   $main_image {
+ *                                image  $src "" "Image URL",
+ *                                text   $alt "" "Alt",
+ *                                number $width "" "Width",
+ *                                number $height "" "Height"
+ *                            } "Main Image" "Appears above form"
  * @wordletArray object   $images {
- *     image  $src "" "Image URL",
- *     text   $alt "" "Alt",
- *     text   $link "" "Link Href",
- *     number $width "" "Width",
- *     number $height "" "Height"
- * } Images
- * @wordlet select   $style {
- *     small = Small,
- *     medium = Medium,
- *     Large,
- *     big = Big
- * } Style "Adjusts the look of the form"
- * @wordlet text     $title "Sign up for things" Title
- * @wordlet textarea $greeting "Thank you for taking the time to fill this form out" Greeting
+ *                               image  $src "" "Image URL",
+ *                               text   $alt "" "Alt",
+ *                               text   $link "" "Link Href",
+ *                               number $width "" "Width",
+ *                               number $height "" "Height"
+ *                            } Images
+ * @wordlet      select   $style {
+ *                                small = Small,
+ *                                medium = Medium,
+ *                                Large,
+ *                                big = Big
+ *                            } Style "Adjusts the look of the form"
+ * @wordlet      text     $title "Sign up for things" Title
+ * @wordlet      textarea $greeting "Thank you for taking the time to fill this form out" Greeting
  * @wordletArray object   $tracking_vars {
- *     text $name "" "Name",
- *     text $value "" "Value"
- * } "Tracking Variables"
- * @wordlet text     $required_label "*" "Required Label"
- * @wordlet text     $name_label "Input your name" "Name Label"
- * @wordlet text     $email_label "Input your email" "Email Label"
- * @wordlet checkbox $show_hear 1 "Show 'hear about us' dropdown"
- * @wordlet text     $hear_label "How did you hear about us?" "'Hear about us' label"
+ *                                text $name "" "Name",
+ *                                text $value "" "Value"
+ *                            } "Tracking Variables"
+ * @wordlet      text     $required_label "*" "Required Label"
+ * @wordlet      text     $name_label "Input your name" "Name Label"
+ * @wordlet      text     $email_label "Input your email" "Email Label"
+ * @wordlet      checkbox $show_hear 1 "Show 'hear about us' dropdown"
+ * @wordlet      text     $hear_label "How did you hear about us?" "'Hear about us' label"
  * @wordletArray text     $hear_options "" "'Hear about us' options"
- * @wordlet text     $submit_label "Sign me up!" "Submit label"
+ * @wordlet      text     $submit_label "Sign me up!" "Submit label"
  * 
  */
 

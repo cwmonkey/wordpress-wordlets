@@ -95,9 +95,9 @@ $(function() {
 
 			wp.media.editor.open($this);
 		})
-		.delegate('.wordlet-widget-set .wordlet-input-text input, .wordlet-widget-set .wordlet-input-number input, .wordlet-widget-set .wordlet-input-textarea textarea', 'change keydown blur', function(e) {
+		.delegate('.wordlet-widget-set .wordlet-float-label input, .wordlet-float-label textarea', 'change keydown blur', function(e) {
 			var $this = $(this);
-			var $parent = $this.closest('.wordlet-input');
+			var $parent = $this.closest('.wordlet-float-label');
 			setTimeout(function() {
 				if ( $this.val() === '' ) {
 					$parent.removeClass('wordlet-filled');

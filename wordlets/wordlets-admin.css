@@ -76,28 +76,32 @@
 	width: 100%;
 }
 
+.wordlet-widget-set .wordlet-description,
 .wordlet-widget-set .wordlet-input {
 	position: relative;
+	line-height: 1.5;
+	margin: 0 0 1em 0;
+	display: block;
 }
+
+.wordlet-widget-set .wordlet-description {
+	margin-left: 1em;
+}
+
 
 .wordlet-widget-set .wordlet-input-image img {
 	display: block;
 }
 
-.wordlet-widget-set .wordlet-input-text input,
+.wordlet-widget-set .wordlet-float-label input,
 .wordlet-widget-set .wordlet-input-select select,
-.wordlet-widget-set .wordlet-input-number input,
-.wordlet-widget-set .wordlet-input-image input[type="text"],
-.wordlet-widget-set .wordlet-input-textarea textarea {
+.wordlet-widget-set .wordlet-float-label textarea {
 	padding-top: 5px;
 	height: auto;
 }
 
-.wordlet-widget-set .wordlet-input-text label,
-.wordlet-widget-set .wordlet-input-number label,
-.wordlet-widget-set .wordlet-input-image label,
-.wordlet-widget-set .wordlet-input-select label,
-.wordlet-widget-set .wordlet-input-textarea label {
+.wordlet-widget-set .wordlet-float-label .wordlet-input-label,
+.wordlet-widget-set .wordlet-input-select .wordlet-input-label {
 	position: absolute;
 	color: #999;
 	transition: all .2s linear;
@@ -120,11 +124,8 @@
 	cursor: ns-resize;
 }
 
-.wordlet-widget-set .wordlet-input-text.wordlet-filled label,
-.wordlet-widget-set .wordlet-input-number.wordlet-filled label,
-.wordlet-widget-set .wordlet-input-image.wordlet-filled label,
-.wordlet-widget-set .wordlet-input-select label,
-.wordlet-widget-set .wordlet-input-textarea.wordlet-filled label {
+.wordlet-widget-set .wordlet-float-label.wordlet-filled .wordlet-input-label,
+.wordlet-widget-set .wordlet-input-select .wordlet-input-label {
 	top: -.6em;
 	left: .5em;
 	font-size: .8em;
@@ -134,6 +135,9 @@
 	background: #fff;
 	border: 1px solid #ccc;
 	line-height: .8;
-	border-radius: 3px
+	border-radius: 3px;
 }
 
+.wordlet-widget-set .wordlet-description {
+	font-style: italic;
+}

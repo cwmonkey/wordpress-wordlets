@@ -69,6 +69,8 @@ class Wordlets_Widget extends WP_Widget {
 
 		$add_inputs = array('image', 'text', 'textarea', 'number', 'select', 'checkbox');
 
+		$this->add_wordlet_type( 'object', null );
+
 		foreach ( $add_inputs as $input ) {
 			$this->add_wordlet_type( $input, $this->_plugin_dir_path . 'inputs/' . $input . '.php' );
 		}
@@ -461,7 +463,7 @@ class Wordlets_Widget extends WP_Widget {
 			$names = array('value' => $wordlet->default);
 		}
 
-		$value_prefix = $this->_file['name'] . '__' . $wordlet->name . (($position !== null)? '__' . $position : '');
+		$value_prefix = $this->_file['name'] . '__' . $wordlet->_name . (($position !== null)? '__' . $position : '');
 		$value_name = $value_prefix . (($name != null)?'__' . $name:'');
 
 		if ( isset($this->_instance[$value_name]) ) {
@@ -482,7 +484,7 @@ class Wordlets_Widget extends WP_Widget {
 			$names = array('value' => $wordlet->default);
 		}
 
-		$value_prefix = $this->_file['name'] . '__' . $wordlet->name . '__' . $position;
+		$value_prefix = $this->_file['name'] . '__' . $wordlet->_name . '__' . $position;
 		foreach ( $names as $name => $def ) {
 			$value_name = $value_prefix . '__' . $name;
 
@@ -628,7 +630,7 @@ class Wordlets_Widget extends WP_Widget {
  */
 
 class Wordlets_Wordlet implements Iterator {
-	public $name;
+	public $_name;
 	public $type;
 	public $default;
 	public $label;
@@ -638,7 +640,7 @@ class Wordlets_Wordlet implements Iterator {
 	public function __construct($name, $type, $default = null, $label = null, $description = null, $is_array = false) {
 		$this->position = 0;
 
-		$this->name = $name;
+		$this->_name = $name;
 		$this->type = $type;
 
 		if ( $type == 'object' && !is_array($default) ) {

@@ -56,6 +56,7 @@ class Wordlets_Widget extends WP_Widget {
 		$this->_plugin_dir_path = plugin_dir_path( __FILE__ );
 
 		if ( is_admin() ) {
+			wp_enqueue_script( 'jquery_floatLabels', plugins_url('floatLabels.js', __FILE__), array( 'jquery' ), self::VERSION );
 			wp_enqueue_script( 'wordlets_widget', plugins_url('wordlets-admin.js', __FILE__), array( 'jquery', 'jquery-ui-sortable' ), self::VERSION );
 			wp_enqueue_style( 'wordlets_widget', plugins_url('wordlets-admin.css', __FILE__), null, self::VERSION );
 

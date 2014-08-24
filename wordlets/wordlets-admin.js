@@ -95,16 +95,9 @@ $(function() {
 
 			wp.media.editor.open($this);
 		})
-		.delegate('.wordlet-widget-set .wordlet-float-label input, .wordlet-float-label textarea', 'change keydown blur', function(e) {
-			var $this = $(this);
-			var $parent = $this.closest('.wordlet-float-label');
-			setTimeout(function() {
-				if ( $this.val() === '' ) {
-					$parent.removeClass('wordlet-filled');
-				} else {
-					$parent.addClass('wordlet-filled');
-				}
-			}, 0);
+		.floatLabels({
+			parent: '.wordlet-widget-set .wordlet-float-label',
+			filledClass: 'wordlet-filled'
 		})
 		.delegate('.wordlet-array', 'mouseover', function() {
 			var $this = $(this);

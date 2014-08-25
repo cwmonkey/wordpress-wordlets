@@ -152,7 +152,7 @@ class Wordlets_Widget extends WP_Widget {
 	 * Can widget display on this page?
 	 */
 
-	public function can_show_widget($instance) {
+	public static function CanShowWidget($instance) {
 		if ( !empty( $instance['paged'] ) ) {
 			$paged = is_paged();
 
@@ -239,7 +239,7 @@ class Wordlets_Widget extends WP_Widget {
 	 * @param array $instance Saved values from database.
 	 */
 	public function widget( $args, $instance ) {
-		$show = $this->can_show_widget($instance);
+		$show = self::CanShowWidget($instance);
 
 		if ( !$show ) return false;
 

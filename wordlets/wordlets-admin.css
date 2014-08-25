@@ -110,6 +110,11 @@
 	border: 1px solid transparent;
 }
 
+/*!
+ * Creative Commons – Attribution (CC BY 3.0) - http://creativecommons.org/licenses/by/3.0/us/
+ * Move Vertically designed by P.J. Onori from the Noun Project
+ */
+
 .wordlet-widget-set .wordlet-array-item:after {
 	background-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgeD0iMHB4IiB5PSIwcHgiIHdpZHRoPSIzNy41cHgiIGhlaWdodD0iMTAwcHgiIHZpZXdCb3g9IjAgMCAzNy41IDEwMCIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgZW5hYmxlLWJhY2tncm91bmQ9Im5ldyAwIDAgMzcuNSAxMDAiPjxwb2x5Z29uIHBvaW50cz0iMjUsNjIuNSAyNSw4MS4yNSAzNy41LDgxLjI1IDE4Ljc1LDEwMCAwLDgxLjI1IDEyLjUsODEuMjUgMTIuNSw2Mi41ICIgZmlsbD0iIzAxMDEwMSIvPjxwb2x5Z29uIHBvaW50cz0iMTIuNSwzNy41IDEyLjUsMTguNzUgMCwxOC43NSAxOC43NSwwIDM3LjUsMTguNzUgMjUsMTguNzUgMjUsMzcuNSAiIGZpbGw9IiMwMTAxMDEiLz48L3N2Zz4=);
 	background-size: contain;

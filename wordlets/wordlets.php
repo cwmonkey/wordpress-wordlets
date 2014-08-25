@@ -88,12 +88,146 @@ class Wordlets_Widget extends WP_Widget {
 	 * @param string $name    Short name of type [a-z0-9_].
 	 * @param string $file    Full file path of admin input template.
 	 */
-
-	function add_wordlet_type($name, $file) {
+	public function add_wordlet_type($name, $file) {
 		$type = new stdClass();
 		$type->name = $name;
 		$type->file = $file;
 		$this->types[$name] = $type;
+	}
+
+	public static $PageTypes = array(
+		/*'default' => array('title' => 'Default Homepage', 'description' => 'is_front_page() && is_home()'),
+		'static' => array('title' => 'Static Homepage', 'description' => 'is_front_page()'),
+		'blog' => array('title' => 'Blog Homepage', 'description' => 'is_home()'),*/
+		'home' => array('title' => 'Homepage', 'description' => 'is_home()'),
+		'page' => array('title' => 'Custom Page', 'description' => ''),
+		'archive' => array('title' => 'Any Archive page', 'description' => 'category, tag, tax, date, author etc'),
+		'search' => array('title' => 'Search', 'description' => ''),
+		'404' => array('title' => '404', 'description' => ''),
+		'single' => array('title' => 'Individual Post', 'description' => '')
+	);
+
+	public static $ShowHides = array(
+		'show' => 'Show widget on these pages',
+		'hide' => 'Hide widget on these pages'
+	);
+
+	/**
+	 * Returns the kind of page being displayed.
+	 */
+	public static function GetPageType() {
+		$type = null;		
+
+		if ( is_front_page() && is_home() ) {
+			// Default homepage
+			// $type = 'default';
+			$type == 'home';
+		} elseif ( is_front_page() ) {
+			// static homepage
+			// $type = 'static';
+			$type == 'home';
+		} elseif ( is_home() ) {
+			// blog page
+			// $type = 'blog';
+			$type == 'home';
+		} elseif ( is_page_template() ) {
+			// returns true or false depending on whether a custom page template was used to render the Page.
+			$type = 'page';
+		} elseif ( is_archive() ) {
+			// category, tag, tax, date, author etc
+			$type = 'archive';
+		} elseif ( is_search() ) {
+			$type = 'search';
+		} elseif ( is_404() ) {
+			$type = 'is_404';
+		} elseif ( is_single() ) {
+			// post page
+			$type = 'single';
+		}
+
+		return $type;
+	}
+
+	/**
+	 * Can widget display on this page?
+	 */
+
+	public function can_show_widget($instance) {
+		if ( !empty( $instance['paged'] ) ) {
+			$paged = is_paged();
+
+			if ( $instance['paged'] === 'first' && $paged ) {
+				return false;
+			} elseif ( $instance['paged'] !== 'first' && !$paged ) {
+				return false;
+			}
+		}
+
+		$logged = '';
+		if ( !empty( $instance['logged'] ) ) {
+			$logged = $instance['logged'];
+		}
+
+		$is_user_logged_in = is_user_logged_in();
+		if ( $logged && ( ( $logged === 'yes' && !$is_user_logged_in ) || ($logged === 'no' && $is_user_logged_in) ) ) {
+			return false;
+		}
+
+		$page_type = self::GetPageType();
+
+		$showhides = array('hide' => false, 'show' => true);
+
+		foreach ( $showhides as $sh => $ret ) {
+			if ( !empty( $instance['showhide_' . $sh] ) ) {
+				if ( !empty( $instance['page_type_' . $sh . '_' . $page_type] ) ) {
+					return $ret;
+				}
+
+				if ( $page_type === 'archive' ) {
+					if ( is_category() && !empty( $instance['usage_category_' . $sh] ) ) {
+						$cat = get_query_var('cat');
+						$category = get_category($cat);
+
+						if ( !empty( $instance['category_' . $sh . '_' . $category->term_id] ) ) {
+							return $ret;
+						}
+					}
+				} elseif ( $page_type === 'single' ) {
+					if ( !empty( $instance['usage_category_' . $sh] ) ) {
+						$categories = get_categories( array( 'hide_empty' => 0 ) );
+
+						foreach ( $categories as $category ) {
+							$in_category = in_category( $category->term_id );
+
+							if ( $in_category ) {
+								if ( !empty( $instance['category_' . $sh . '_' . $category->term_id] ) ) {
+									return $ret;
+								}
+							}
+						}
+					}
+
+					if ( !empty( $instance['ids_' . $sh] ) ) {
+						$ids = explode( ', ', $instance['ids_' . $sh] );
+						$found = ( array_search( get_the_ID(), $ids ) !== false );
+
+						if ( $found ) {
+							return $ret;
+						}
+					}
+				} elseif ( $page_type === 'page' ) {
+					$page_template = get_page_template();
+
+					if ( !empty( $instance['template_' . $sh . '_' . $page_template] ) ) {
+						return $ret;
+					}
+				}
+
+				if ( $sh === 'show' ) return false;
+			}
+		}
+
+		return true;
 	}
 
 	/**
@@ -105,6 +239,10 @@ class Wordlets_Widget extends WP_Widget {
 	 * @param array $instance Saved values from database.
 	 */
 	public function widget( $args, $instance ) {
+		$show = $this->can_show_widget($instance);
+
+		if ( !$show ) return false;
+
 		$this->_file = $file = $this->_get_wordlet_files($instance['template']);
 		$this->_instance = $instance;
 		//$title = apply_filters( 'widget_title', $instance['title'] );
@@ -143,43 +281,114 @@ class Wordlets_Widget extends WP_Widget {
 		} else {
 			$title = __( 'New Wordlet', $this->text_domain );
 		}
+
+		$pages = wp_get_theme()->get_page_templates();
+		$categories = get_categories(array('hide_empty' => 0));
+
 		?>
 		<div class="wordlets-widget-wrapper">
-		<p>
-		<label for="<?php echo $this->get_field_id( 'title' ); ?>"><?php _e( 'Title (not shown on widget):' ); ?></label> 
-		<input class="widefat wordlet-widget-title" id="<?php echo $this->get_field_id( 'title' ); ?>" name="<?php echo $this->get_field_name( 'title' ); ?>" type="text" value="<?php echo esc_attr( $title ); ?>">
-		</p>
-		<?php 
+			<fieldset class="wordlets-widget-setup <?php echo ( !empty($instance['hide']) ) ? 'wordlets-widget-hide' : '' ?>">
+				<p>
+					<label for="<?php echo $this->get_field_id( 'title' ); ?>"><?php _e( 'Title (not shown on widget):' ); ?></label> 
+					<input class="widefat wordlet-widget-title" id="<?php echo $this->get_field_id( 'title' ); ?>" name="<?php echo $this->get_field_name( 'title' ); ?>" type="text" value="<?php echo esc_attr( $title ); ?>">
+				</p>
+				<?php 
 
-		?>
-		<p style="border-bottom:1px solid #ccc;padding-bottom:1em">
-		<label for="<?php echo $this->get_field_id( 'template' ); ?>"><?php _e( 'Template:' ); ?></label> 
-		<select class="wordlets-widget-template" id="<?php echo $this->get_field_id( 'template' ); ?>" name="<?php echo $this->get_field_name( 'template' ); ?>">
-		<?php
+				?>
+				<p>
+					<label for="<?php echo $this->get_field_id( 'template' ); ?>"><?php _e( 'Template:' ); ?></label> 
+					<select class="wordlets-widget-template" id="<?php echo $this->get_field_id( 'template' ); ?>" name="<?php echo $this->get_field_name( 'template' ); ?>">
+					<?php
 
-		foreach ( $wordlets_files as $fname => $info ) {
-			$display = $fname;
-			if ( isset($info['props']['name']) ) {
-				$display = $info['props']['name'];
-			}
+					foreach ( $wordlets_files as $fname => $info ) {
+						$display = $fname;
+						if ( isset($info['props']['name']) ) {
+							$display = $info['props']['name'];
+						}
 
-			if ( isset($info['props']['description']) ) {
-				$display .= ' (' . $info['props']['description'] . ')';
-			}
+						if ( isset($info['props']['description']) ) {
+							$display .= ' (' . $info['props']['description'] . ')';
+						}
 
-			$selected = '';
-			if ( isset($instance['template']) && $fname == $instance['template'] ) {
-				$selected = 'selected="selected"';
-			}
+						$selected = '';
+						if ( isset($instance['template']) && $fname == $instance['template'] ) {
+							$selected = 'selected="selected"';
+						}
 
-			?>
-			<option value="<?php echo esc_attr( $fname ); ?>" <?php echo $selected ?>><?php echo esc_attr( $display ); ?></option>
-			<?php
-		}
+						?>
+						<option value="<?php echo esc_attr( $fname ); ?>" <?php echo $selected ?>><?php echo esc_attr( $display ); ?></option>
+						<?php
+					}
 
-		?>
-		</select>
-		</p>
+					?>
+					</select>
+				</p>
+
+				<fieldset class="wordlets-widget-limit">
+					<legend><?php echo __('Display widget for') ?>:</legend>
+					<p>
+					<select name="<?php echo $this->get_field_name( 'logged' ); ?>">
+						<option value=""><?php echo __('All users') ?></option>
+						<option value="yes" <?php echo ( !empty($instance['logged']) && 'yes' == $instance['logged'] ) ? 'selected="selected"' : '' ?>><?php echo __('Logged in users') ?></option>
+						<option value="no" <?php echo ( !empty($instance['logged']) && 'no' == $instance['logged'] ) ? 'selected="selected"' : '' ?>><?php echo __('Logged out users') ?></option>
+					</select>
+					</p>
+					<p>
+					<select name="<?php echo $this->get_field_name( 'paged' ); ?>">
+						<option value=""><?php echo __('All paginated pages') ?></option>
+						<option value="first" <?php echo ( !empty($instance['paged']) && 'first' == $instance['paged'] ) ? 'selected="selected"' : '' ?>><?php echo __('First page only'); ?></option>
+						<option value="paged" <?php echo ( !empty($instance['paged']) && 'paged' == $instance['paged'] ) ? 'selected="selected"' : '' ?>><?php echo __('All pages after the first'); ?></option>
+					</select>
+					</p>
+					<?php foreach ( self::$ShowHides as $sh => $title ) { ?>
+						<p class="wordlets-widget-pages-showhide">
+							<input type="checkbox" name="<?php echo $this->get_field_name( 'showhide_' . $sh ); ?>" id="<?php echo $this->get_field_id( 'showhide_' . $sh ); ?>" <?php echo ( !empty($instance['showhide_' . $sh]) ) ? 'checked="checked"' : ''; ?>>
+							<label for="<?php echo $this->get_field_id( 'showhide_' . $sh ); ?>">
+								<?php echo __($title) ?>:
+							</label>
+						</p>
+						<fieldset class="wordlets-widget-pages <?php echo ( empty( $instance['showhide_' . $sh] ) ) ? 'wordlets-widget-hide' : ''; ?>">
+							<fieldset class="wordlets-widget-categories">
+								<legend><?php echo __('Categories') ?></legend>
+								<?php foreach ( $categories as $category ) { ?>
+									<p>
+									<input type="checkbox" name="<?php echo $this->get_field_name( 'category_' . $sh . '_' . $category->term_id ); ?>" id="<?php echo $this->get_field_id( 'category_' . $sh . '_' . $category->term_id ); ?>" <?php echo ( !empty($instance['category_' . $sh . '_' . $category->term_id]) ) ? 'checked="checked"' : ''; ?>>
+									<label for="<?php echo $this->get_field_id( 'category_' . $sh . '_' . $category->term_id ); ?>"><?php echo $category->name; ?>:</label>
+									</p>
+								<?php } ?>
+							</fieldset>
+							<fieldset class="wordlets-widget-page-types">
+								<legend><?php echo __('Page Types') ?></legend>
+								<?php foreach ( self::$PageTypes as $key => $type ) { ?>
+									<p>
+									<input type="checkbox" name="<?php echo $this->get_field_name( 'page_type_' . $sh . '_' . $key ); ?>" id="<?php echo $this->get_field_id( 'page_type_' . $sh . '_' . $key ); ?>" <?php echo ( !empty($instance['page_type_' . $sh . '_' . $key]) ) ? 'checked="checked"' : ''; ?>>
+									<label for="<?php echo $this->get_field_id( 'page_type_' . $sh . '_' . $key ); ?>" title="<?php echo esc_attr( $type['description'] ); ?>"><?php echo $type['title']; ?></label>
+									</p>
+								<?php } ?>
+							</fieldset>
+							<fieldset class="wordlets-widget-templates">
+								<legend><?php echo __('Custom Pages') ?></legend>
+								<?php foreach ( $pages as $key => $page ) { ?>
+									<p>
+									<input type="checkbox" name="<?php echo $this->get_field_name( 'template_' . $sh . '_' . $key ); ?>" id="<?php echo $this->get_field_id( 'template_' . $sh . '_' . $key ); ?>" <?php echo ( !empty($instance['template_' . $sh . '_' . $key]) ) ? 'checked="checked"' : ''; ?>>
+									<label for="<?php echo $this->get_field_id( 'template_' . $key ); ?>"><?php echo $page; ?></label>
+									</p>
+								<?php } ?>
+							</fieldset>
+							<p>
+							<label for="<?php echo $this->get_field_id( 'ids_' . $sh ); ?>"><?php echo __('Comma Separated list of post IDs'); ?>:</label>
+							<input type="text" class="widefat" name="<?php echo $this->get_field_name( 'ids_' . $sh ); ?>" id="<?php echo $this->get_field_id( 'ids_' . $sh ); ?>" value="<?php echo ( !empty($instance['ids_' . $sh]) ) ? esc_attr( $instance['ids_' . $sh] ) : ''; ?>">
+							</p>
+						</fieldset>
+					<?php } ?>
+				</fieldset>
+			</fieldset>
+			<p class="wordlets-widget-showhide">
+				<input type="checkbox" name="<?php echo $this->get_field_name( 'hide' ); ?>" id="<?php echo $this->get_field_id( 'hide' ); ?>" <?php echo ( !empty($instance['hide']) ) ? 'checked="checked"' : ''; ?>>
+				<label for="<?php echo $this->get_field_id( 'hide' ); ?>">
+					<?php echo __('Hide Setup Options'); ?>
+				</label>
+			</p>
 		<?php
 
 		$loops = 0;
@@ -258,8 +467,50 @@ class Wordlets_Widget extends WP_Widget {
 	 */
 	public function update( $new_instance, $old_instance ) {
 		$instance = array();
-		$instance['title'] = ( ! empty( $new_instance['title'] ) ) ? strip_tags( $new_instance['title'] ) : '';
-		$instance['template'] = ( ! empty( $new_instance['template'] ) ) ? strip_tags( $new_instance['template'] ) : '';
+		$instance['title'] = ( !empty( $new_instance['title'] ) ) ? strip_tags( $new_instance['title'] ) : '';
+		$instance['template'] = ( !empty( $new_instance['template'] ) ) ? $new_instance['template'] : '';
+		$instance['paged'] = ( !empty( $new_instance['paged'] ) ) ? $new_instance['paged'] : '';
+		$instance['logged'] = ( !empty( $new_instance['logged'] ) ) ? $new_instance['logged'] : '';
+		$instance['hide'] = ( !empty( $new_instance['hide'] ) ) ? 1 : '';
+
+		foreach ( self::$ShowHides as $sh => $title ) {
+			$instance['showhide_' . $sh] = ( !empty( $new_instance['showhide_' . $sh] ) ) ? 1 : '';
+
+			if ( !empty( $new_instance['ids_' . $sh] ) ) {
+				$ids = explode(',', $new_instance['ids_' . $sh]);
+				$instance['ids_' . $sh] = implode(', ', $ids);
+			}
+
+			foreach ( self::$PageTypes as $key => $page ) {
+				$instance['page_type_' . $sh . '_' . $key] = ( !empty( $new_instance['page_type_' . $sh . '_' . $key] ) ) ? $new_instance['page_type_' . $sh . '_' . $key] : '';
+			}
+
+			$tpls = wp_get_theme()->get_page_templates();
+			$tpl_found = false;
+			foreach ( $tpls as $key => $tpl ) {
+				if ( !empty( $new_instance['template_' . $sh . '_' . $key] ) ) {
+					$instance['template_' . $sh . '_' . $key] = $new_instance['template_' . $sh . '_' . $key];
+					$tpl_found = true;
+				} else {
+					$instance['template_' . $sh . '_' . $key] = '';
+				}
+			}
+
+			$instance['usage_template_' . $sh] = ( $tpl_found ) ? 1 : '';
+
+			$categories = get_categories(array('hide_empty' => 0));
+			$category_found = false;
+			foreach ( $categories as $category ) {
+				if ( !empty( $new_instance['category_' . $sh . '_' . $category->term_id] ) ) {
+					$instance['category_' . $sh . '_' . $category->term_id] = $new_instance['category_' . $sh . '_' . $category->term_id];
+					$category_found = true;
+				} else {
+					$instance['category_' . $sh . '_' . $category->term_id] = '';
+				}
+			}
+
+			$instance['usage_category_' . $sh] = ( $category_found ) ? 1 : '';
+		}
 
 		$file = $this->_get_wordlet_files($instance['template']);
 
@@ -271,7 +522,7 @@ class Wordlets_Widget extends WP_Widget {
 				$k = 0;
 				for ( $i = 0; $i < 100; $i++ ) {
 					$has_something = false;
-					$value_name_prefix = $value_prefix; // . '__' . $i;
+					$value_name_prefix = $value_prefix;
 
 					if ( $wordlet->type == 'object' ) {
 						$names = $wordlet->default;

@@ -141,3 +141,35 @@
 .wordlet-widget-set .wordlet-description {
 	font-style: italic;
 }
+
+/* Setup */
+
+.wordlets-widget-hide {
+	display: none;
+}
+
+.wordlets-widget-showhide {
+	border-bottom: 1px solid #ccc;
+	padding-bottom: 1em;
+}
+
+.wordlets-widget-pages {
+	max-height: 100px;
+	overflow: auto;
+	padding: 1em;
+	border: 1px solid #ccc;
+}
+
+.wordlets-widget-pages legend {
+	font-weight: bold;
+}
+
+.wordlets-widget-pages p {
+	margin: 1em;
+}
+
+.wordlets-widget-limit {
+	border: 1px solid #ccc;
+	padding: 0 1em 1em 1em;
+	margin-bottom: 1em;
+}

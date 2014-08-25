@@ -110,6 +110,30 @@ $(function() {
 				}
 			})
 		})
+		// showhide setup options
+		.delegate('.wordlets-widget-showhide input', 'change keypress', function(e) {
+			var $this = $(this);
+			var checked = $this.prop('checked');
+			var $target = $this.closest('.wordlets-widget-showhide').prev('.wordlets-widget-setup');
+
+			if ( !checked ) {
+				$target.slideDown(500);
+			} else {
+				$target.slideUp(500);
+			}
+		})
+		// showhide pages
+		.delegate('.wordlets-widget-pages-showhide input', 'change keypress', function(e) {
+			var $this = $(this);
+			var checked = $this.prop('checked');
+			var $target = $this.closest('.wordlets-widget-pages-showhide').next('.wordlets-widget-pages');
+
+			if ( !checked ) {
+				$target.slideUp(500);
+			} else {
+				$target.slideDown(500);
+			}
+		})
 		;
 
 });

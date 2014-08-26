@@ -21,9 +21,9 @@
 	<input class="widefat" id="<?php echo $input_id; ?>" name="<?php echo $input_name; ?>" type="text" value="<?php echo esc_attr( $value ); ?>">
 	<input type="button" id="<?php echo $input_id; ?>-set" value="<?php _e( 'Choose Image', $this->text_domain ); ?>" class="button wordlets-widget-image-set"
 		data-target="#<?php echo $input_id; ?>"
-		data-alt="#<?php echo $this->get_field_id( $value_prefix . '__alt' ); ?>"
-		data-width="#<?php echo $this->get_field_id( $value_prefix . '__width' ); ?>"
-		data-height="#<?php echo $this->get_field_id( $value_prefix . '__height' ); ?>"
+		data-alt="#<?php echo $this->get_field_id( $value_prefix . '__alt' ) . $id_extra; ?>"
+		data-width="#<?php echo $this->get_field_id( $value_prefix . '__width' ) . $id_extra; ?>"
+		data-height="#<?php echo $this->get_field_id( $value_prefix . '__height' ) . $id_extra; ?>"
 		data-image="#<?php echo $input_id; ?>-image">
 	<img style="max-width:100%;max-height:100px;" id="<?php echo $input_id; ?>-image" src="<?php echo esc_attr( (($value)?$value:'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7') ); ?>">
 

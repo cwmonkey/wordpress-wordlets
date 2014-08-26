@@ -33,7 +33,3 @@
 		<?php } ?>
 	<?php } ?>
 </select>
-
-<?php if ( $description && !$hide_labels ) { ?>
-	<label class="wordlet-description"><?php echo $description ?></label>
-<?php } ?>

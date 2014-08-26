@@ -23,7 +23,8 @@
  *                               text   $alt "" "Alt",
  *                               text   $link "" "Link Href",
  *                               number $width "" "Width",
- *                               number $height "" "Height"
+ *                               number $height "" "Height",
+ *                               select $category ( [categories] ) "Category" "Select a Category"
  *                            } Images
  * @wordlet      select   $style {
  *                                small = Small,
@@ -60,6 +61,7 @@
 <img src="<?=$main_image->src ?>" alt="<?=$main_image->alt ?>" width="<?=$main_image->width ?>">
 <hr>
 <? foreach ( $images as $image): ?>
+	<?=$image->category->name ?>
 	<? if ( $image->link ): ?>
 		<a href="<?=$image->link ?>">
 			<img src="<?=$image->src ?>" alt="<?=$image->alt ?>" width="<?=$image->width ?>">
@@ -78,7 +80,7 @@
 
 	<form action="http://example.com/some-remote-site">
 		<? foreach ( $tracking_vars as $input ): ?>
-			<input type="hidden" name="<?=$input->key ?>" value="<?=$input->value ?>">
+			<input type="hidden" name="<?=$input->name ?>" value="<?=$input->value ?>">
 		<? endforeach ?>
 
 		<p class="input text">

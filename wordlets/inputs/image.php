@@ -19,7 +19,7 @@
 	<?php echo $default_label; ?>
 
 	<input class="widefat" id="<?php echo $input_id; ?>" name="<?php echo $input_name; ?>" type="text" value="<?php echo esc_attr( $value ); ?>">
-	<input type="button" id="<?php echo $input_id; ?>-set" value="<?php _e( 'Choose Image', $this->text_domain ); ?>" class="button wordlets-widget-image-set"
+	<input type="button" id="<?php echo $input_id; ?>-set" value="<?php _e( 'Choose Image', $text_domain ); ?>" class="button wordlets-widget-image-set"
 		data-target="#<?php echo $input_id; ?>"
 		data-alt="#<?php echo $this->get_field_id( $value_prefix . '__alt' ) . $id_extra; ?>"
 		data-width="#<?php echo $this->get_field_id( $value_prefix . '__width' ) . $id_extra; ?>"

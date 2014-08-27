@@ -38,82 +38,123 @@ add_action('widgets_init', 'load_wordlets_widget');
  * Wordlets_Widget class
  **/
 class Wordlets_Widget extends WP_Widget {
+	/********************************
+	 * CONSTANTS:
+	 ********************************/
+
 	const VERSION = '1.0';
-	public $text_domain = 'widget-text-domain';
-	public $types = array();
-	private $_plugin_dir_path = '';
+
+	/********************************
+	 * STATIC:
+	 ********************************/
 
 	/**
-	 * Register widget with WordPress.
+	 * Wordpress text domain for translations.
 	 */
-	function __construct() {
-		parent::__construct(
-			'wordlets_widget', // Base ID
-			__('Wordlets', $this->text_domain), // Name
-			array( 'description' => __( 'Widgets for Developers', $this->text_domain ), ) // Args
-		);
-
-		$this->_plugin_dir_path = plugin_dir_path( __FILE__ );
-
-		if ( is_admin() ) {
-			wp_enqueue_script( 'jquery_floatLabels', plugins_url('floatLabels.js', __FILE__), array( 'jquery' ), self::VERSION );
-			wp_enqueue_script( 'wordlets_widget', plugins_url('wordlets-admin.js', __FILE__), array( 'jquery', 'jquery-ui-sortable' ), self::VERSION );
-			wp_enqueue_style( 'wordlets_widget', plugins_url('wordlets-admin.css', __FILE__), null, self::VERSION );
-
-			// image input
-			if ( ! did_action( 'wp_enqueue_media' ) ) wp_enqueue_media();
-			wp_enqueue_script( 'custom-header' );
-
-			// Allow themes to add admin scripts
-			do_action('wordlets-admin-construct', $this);
-		}
-
-		$add_inputs = array('image', 'text', 'textarea', 'number', 'select', 'checkbox');
-
-		$this->add_wordlet_type( 'object', null );
-
-		foreach ( $add_inputs as $input ) {
-			$this->add_wordlet_type( $input, $this->_plugin_dir_path . 'inputs/' . $input . '.php' );
-		}
-
-		// Allow themes to add inputs
-		do_action('wordlets-construct', $this);
-
-		self::$me = $this;
-	}
+ 	public static $TextDomain = 'widget-text-domain';
 
 	/**
-	 * Add wordlet type/admin input
-	 *
-	 * @param string $name    Short name of type [a-z0-9_].
-	 * @param string $file    Full file path of admin input template.
+	 * Page types for wordlet show/hide panel in admin.
 	 */
-	public function add_wordlet_type($name, $file) {
-		$type = new stdClass();
-		$type->name = $name;
-		$type->file = $file;
-		$this->types[$name] = $type;
-	}
-
 	public static $PageTypes = array(
 		/*'default' => array('title' => 'Default Homepage', 'description' => 'is_front_page() && is_home()'),
 		'static' => array('title' => 'Static Homepage', 'description' => 'is_front_page()'),
 		'blog' => array('title' => 'Blog Homepage', 'description' => 'is_home()'),*/
-		'home' => array('title' => 'Homepage', 'description' => 'is_home()'),
-		'page' => array('title' => 'Custom Page', 'description' => ''),
-		'archive' => array('title' => 'Any Archive page', 'description' => 'category, tag, tax, date, author etc'),
-		'search' => array('title' => 'Search', 'description' => ''),
-		'404' => array('title' => '404', 'description' => ''),
-		'single' => array('title' => 'Individual Post', 'description' => '')
+		'home' => array( 'title' => 'Homepage', 'description' => 'is_front_page() || is_home()' ),
+		'page' => array( 'title' => 'Custom Page', 'description' => '' ),
+		'archive' => array( 'title' => 'Any Archive page', 'description' => 'category, tag, tax, date, author etc' ),
+		'search' => array( 'title' => 'Search', 'description' => '' ),
+		'404' => array( 'title' => '404', 'description' => '' ),
+		'single' => array( 'title' => 'Individual Post', 'description' => '' )
 	);
 
+	/**
+	 * Wordlet show/hide panel verbiage in admin.
+	 */
 	public static $ShowHides = array(
 		'show' => 'Show widget on these pages',
 		'hide' => 'Hide widget on these pages'
 	);
 
 	/**
-	 * Returns the kind of page being displayed.
+	 * Default Wordlet admin input types.
+	 */
+	public static $DefaultWordletTypes = array( 'image', 'text', 'textarea', 'number', 'select', 'checkbox' );
+
+	/**
+	 * Set up wordlet types.
+	 */
+	public static $Types = array();
+
+	/**
+	 * Cached parsed wordlet file objects.
+	 */
+	public static $WordletFiles = null;
+
+	/**
+	 * Delegate containing the current wordlet being rendered.
+	 */
+	static $me;
+
+	/**
+	 * See if current widget's wordlet has any values
+	 */
+	static function HasValues($wordlet, $position) {
+		if ( $wordlet->type == 'object' ) {
+			$names = $wordlet->default;
+		} else {
+			$names = array('value' => $wordlet->default);
+		}
+
+		$value_prefix = self::$me->_file['name'] . '__' . $wordlet->_name . '__' . $position;
+		foreach ( $names as $name => $def ) {
+			$value_name = $value_prefix . '__' . $name;
+
+			if ( isset(self::$me->_instance[$value_name]) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Get current widget's value
+	 */
+	static function GetValue($wordlet, $name, $position = null) {
+		if ( $wordlet->type == 'object' ) {
+			$names = $wordlet->default;
+		} else {
+			$names = array('value' => $wordlet->default);
+		}
+
+		$value_prefix = self::$me->_file['name'] . '__' . $wordlet->_name . (($position !== null)? '__' . $position : '');
+		$value_name = $value_prefix . (($name != null)?'__' . $name:'');
+
+		if ( isset(self::$me->_instance[$value_name]) ) {
+			return self::$me->_instance[$value_name];
+		}
+
+		return '';
+	}
+
+	/**
+	 * Add wordlet type/admin input.
+	 *
+	 * Used for adding custom inputs within your {theme}/wordlets/inputs directory.
+	 *
+	 * @param string $name    Short name of type [a-z0-9_].
+	 * @param string $file    Full file path of admin input template.
+	 */
+	public static function AddWordletType($name, $file) {
+		$type = new stdClass();
+		$type->name = $name;
+		$type->file = $file;
+		self::$Types[$name] = $type;
+	}
+
+	/**
+	 * Returns the page type currently being displayed.
 	 */
 	public static function GetPageType() {
 		$type = null;		
@@ -151,8 +192,8 @@ class Wordlets_Widget extends WP_Widget {
 	/**
 	 * Can widget display on this page?
 	 */
-
 	public static function CanShowWidget($instance) {
+		// Look for pagination constraints
 		if ( !empty( $instance['paged'] ) ) {
 			$paged = is_paged();
 
@@ -163,6 +204,7 @@ class Wordlets_Widget extends WP_Widget {
 			}
 		}
 
+		// Look for login constraints
 		$logged = '';
 		if ( !empty( $instance['logged'] ) ) {
 			$logged = $instance['logged'];
@@ -173,16 +215,21 @@ class Wordlets_Widget extends WP_Widget {
 			return false;
 		}
 
+		// Look for page type constraints
 		$page_type = self::GetPageType();
 
 		$showhides = array('hide' => false, 'show' => true);
 
 		foreach ( $showhides as $sh => $ret ) {
+			// See if show/hide checkbox was checked
 			if ( !empty( $instance['showhide_' . $sh] ) ) {
+				// Page type was blanked shown/hidden
 				if ( !empty( $instance['page_type_' . $sh . '_' . $page_type] ) ) {
 					return $ret;
 				}
 
+				// If current page is an archive type, check for category constraints
+				// TODO: Add tag constraints?
 				if ( $page_type === 'archive' ) {
 					if ( is_category() && !empty( $instance['usage_category_' . $sh] ) ) {
 						$cat = get_query_var('cat');
@@ -192,6 +239,7 @@ class Wordlets_Widget extends WP_Widget {
 							return $ret;
 						}
 					}
+				// If current page is a post, check for categories and specific post id constraints
 				} elseif ( $page_type === 'single' ) {
 					if ( !empty( $instance['usage_category_' . $sh] ) ) {
 						$categories = get_categories( array( 'hide_empty' => 0 ) );
@@ -215,6 +263,7 @@ class Wordlets_Widget extends WP_Widget {
 							return $ret;
 						}
 					}
+				// If current page is a custom page, check for custom page template constraints
 				} elseif ( $page_type === 'page' ) {
 					$page_template = get_page_template();
 
@@ -223,11 +272,198 @@ class Wordlets_Widget extends WP_Widget {
 					}
 				}
 
+				// If we're on the show loop (last), return a false if no show constraints matched
+				// TODO: Word that comment better :P
 				if ( $sh === 'show' ) return false;
 			}
 		}
 
 		return true;
+	}
+
+	/**
+	 * Update wordlet values in widget instance.
+	 */
+	public static function UpdateInstance( $instance, $new_instance, $value_prefix, $wordlet, $new_value_prefix = '', $i = null ) {
+		$names = array();
+		if ( $wordlet->type == 'object' ) {
+			$names = $wordlet->default;
+		} else {
+			$names = array('value' => $wordlet->default);
+		}
+
+		foreach ( $names as $name => $def ) {
+			$old_value_name = $value_prefix . '__' . $name;
+			if ( $new_value_prefix ) {
+				$new_value_name = $new_value_prefix . '__' . $name;
+			} else {
+				$new_value_name = $old_value_name;
+			}
+
+			if ( $i !== null ) {
+				$instance[$new_value_name] = ( ! empty( $new_instance[$old_value_name][$i] ) ) ? $new_instance[$old_value_name][$i] : '';
+			} else {
+				$instance[$new_value_name] = ( ! empty( $new_instance[$old_value_name] ) ) ? $new_instance[$old_value_name] : '';
+			}
+		}
+
+		return $instance;
+	}
+
+	/**
+	 * Return information/wordlet settings in a single wordlet file or all wordlet files within theme.
+	 */
+	public static function GetWordletFiles( $template = null ) {
+		$wordlets_files = array();
+		$tpl_dir = get_template_directory();
+
+		if ( $template ) {
+			if ( has_action('wordlets-get-cache-file-parse') ) {
+				$data = do_action('wordlets-get-cache-file-parse', 'wordlets-file-' . $name);
+			} else {
+				$data = wp_cache_get('wordlets-file-' . $template, 'wordlets-file');
+			}
+
+			if ( false !== $data ) return $data;
+
+			if ( isset( self::$WordletFiles[$template] ) ) return self::$WordletFiles[$template];
+
+			$files = array(
+				$tpl_dir . DIRECTORY_SEPARATOR . 'wordlets' . DIRECTORY_SEPARATOR . $template . '.php',
+				$tpl_dir . DIRECTORY_SEPARATOR . 'wordlets' . DIRECTORY_SEPARATOR . 'wordlet-' . $template . '.php',
+				$tpl_dir . DIRECTORY_SEPARATOR . 'wordlets-' . $template . '.php',
+			);
+
+			foreach ( $files as $file ) {
+				if ( is_readable($file) ) {
+					$wf = self::ParseFile( $file, $template );
+					return $wf;
+				}
+			}
+		} else {
+			if ( self::$WordletFiles ) return self::$WordletFiles;
+
+			// Check the root dir first
+			$files = scandir( $tpl_dir );
+			foreach ( $files as $file ) {
+				if ( preg_match('/^wordlets\-(.+)\.php$/', $file, $matches) ) {
+					$name = $matches[1];
+					$wordlets_files[$name] = self::ParseFile( $tpl_dir . DIRECTORY_SEPARATOR . $file, $name );
+				}
+			}
+
+			// Then scan the wordlets dir (override root files)
+			$wordlets_dir = $tpl_dir . DIRECTORY_SEPARATOR . 'wordlets';
+			if ( is_readable($wordlets_dir) && $files = scandir( $wordlets_dir ) ) {
+				foreach ( $files as $file ) {
+					if ( preg_match('/^wordlets\-(.+)\.php$/', $file, $matches) || preg_match('/^(.+)\.php$/', $file, $matches) ) {
+						$name = $matches[1];
+						$wordlets_files[$name] = self::ParseFile( $tpl_dir . DIRECTORY_SEPARATOR . 'wordlets' . DIRECTORY_SEPARATOR . $file, $name );
+					}
+				}
+			}
+
+			self::$WordletFiles = $wordlets_files;
+
+			return $wordlets_files;
+		}
+
+	}
+
+	/**
+	 * Return properties and wordlet objects within a wordlet file.
+	 */
+	public static function ParseFile( $file, $name ) {
+		$file_props = array('file' => $file);
+		$content = file_get_contents($file);
+		$wordlets = array();
+
+		// Get properties in first comment
+		if ( preg_match('/\/\*\*(.*)\*\//is', $content, $matches) && !empty($matches[1]) ) {
+			$comment = preg_replace('/([\r\n])*\s*\*\s*/', '$1', $matches[1]);
+
+			if ( preg_match_all('/@((name)|(description))\s*(.+?)(?=[\r\n]@)/is', $comment, $properties) && !empty($properties[1]) ) {
+				foreach ( $properties[1] as $key => $property ) {
+					$file_props[strtolower(trim($property))] = trim($properties[4][$key]);
+				}
+			}
+
+			//1 Array
+			//2 type
+			//3 name
+			//4 default or attributes or options
+			//8 Label
+			//11 Description
+			if ( preg_match_all('/@wordlet(Array)?\s*([a-z]+)\s+\$([a-z][a-z_0-9]+)\s*(([a-z0-9]+)|("[^"]*")|(\{[^\}]*\}))\s*(([a-z]+)|("[^"]*"))?\s*(([a-z]+)|("[^"]*"))?\s*/is', $comment, $w) ) {
+				foreach ( $w[2] as $key => $type ) {
+					if ( false === array_search($type, array_keys( self::$Types ) ) ) continue;
+
+					$wordlet = new Wordlets_Wordlet($w[3][$key], $w[2][$key], trim($w[4][$key], '"'), trim($w[8][$key], '"'), trim($w[11][$key], '"'), trim($w[1][$key], '"'));
+					$wordlets[$w[3][$key]] = $wordlet;
+				}
+			}
+		}
+
+		$data = array('name' => $name, 'props' => $file_props, 'wordlets' => $wordlets);
+
+		// Allow themes to define their own caching method
+		if ( has_action('wordlets-set-cache-file-parse') ) {
+			do_action('wordlets-set-cache-file-parse', 'wordlets-file-' . $name, $data);
+		} else {
+			wp_cache_set('wordlets-file-' . $name, $data, 'wordlets-file', 3600 * 24 * 365);
+		}
+
+		return $data;
+	}
+
+	/********************************
+	 * INSTANCED:
+	 ********************************/
+
+	/****************
+	 * WordPress Defaults:
+	 ****************/
+
+	/**
+	 * Register widget with WordPress.
+	 */
+	function __construct() {
+		parent::__construct(
+			'wordlets_widget', // Base ID
+			__('Wordlets', self::$TextDomain), // Name
+			array( 'description' => __( 'Widgets for Developers', self::$TextDomain ), ) // Args
+		);
+
+		$this->_plugin_dir_path = plugin_dir_path( __FILE__ );
+
+		if ( is_admin() ) {
+			wp_enqueue_script( 'jquery_floatLabels', plugins_url('floatLabels.js', __FILE__), array( 'jquery' ), self::VERSION );
+			wp_enqueue_script( 'wordlets_widget', plugins_url('wordlets-admin.js', __FILE__), array( 'jquery', 'jquery-ui-sortable' ), self::VERSION );
+			wp_enqueue_style( 'wordlets_widget', plugins_url('wordlets-admin.css', __FILE__), null, self::VERSION );
+
+			// image input
+			if ( ! did_action( 'wp_enqueue_media' ) ) wp_enqueue_media();
+			wp_enqueue_script( 'custom-header' );
+
+			// Allow themes to add admin scripts
+			do_action( 'wordlets-admin-construct', $this );
+		}
+
+		// Only do this once per page
+		if ( !count(self::$Types) ) {
+			// "object" is a wordlet type with no associated input file
+			self::AddWordletType( 'object', null );
+
+			foreach ( self::$DefaultWordletTypes as $input ) {
+				self::AddWordletType( $input, $this->_plugin_dir_path . 'inputs/' . $input . '.php' );
+			}
+
+			// Allow themes to add inputs
+			do_action( 'wordlets-construct', $this );
+		}
+
+		// Give global access to current Wordlet wifget
+		self::$me = $this;
 	}
 
 	/**
@@ -243,23 +479,22 @@ class Wordlets_Widget extends WP_Widget {
 
 		if ( !$show ) return false;
 
-		$this->_file = $file = $this->_get_wordlet_files($instance['template']);
+		$this->_file = $file = self::GetWordletFiles( $instance['template'] );
 		$this->_instance = $instance;
-		//$title = apply_filters( 'widget_title', $instance['title'] );
 
 		echo $args['before_widget'];
-		/*if ( ! empty( $title ) ) {
-			echo $args['before_title'] . $title . $args['after_title'];
-		}
-		echo __( 'Hello, World!', $this->text_domain );*/
 
 		extract($file['wordlets']);
 
+		/**
+		 * Include the wordlet file from {theme}/wordlet-{name}.php or {theme}/wordlets/{name}.php
+ 		 */
 		include($file['props']['file']);
 
 		if ( current_user_can( 'manage_options' ) ) {
-			echo '<a href="' . admin_url( 'widgets.php?' . $args['widget_id'] ) . '" target="_blank" class="wordlets-admin-link">' . __( 'Edit', $this->text_domain ) . '</a>';
+			echo '<a href="' . admin_url( 'widgets.php?' . $args['widget_id'] ) . '" target="_blank" class="wordlets-admin-link">' . __( 'Edit', self::$TextDomain ) . '</a>';
 		}
+
 		echo $args['after_widget'];
 	}
 
@@ -271,15 +506,15 @@ class Wordlets_Widget extends WP_Widget {
 	 * @param array $instance Previously saved values from database.
 	 */
 	public function form( $instance ) {
-		$wordlets_files = $this->_get_wordlet_files();
+		$wordlets_files = self::GetWordletFiles();
 
 		if ( isset( $instance[ 'title' ] ) ) {
 			$title = $instance[ 'title' ];
 		} elseif ( count($wordlets_files) ) {
 			$props = $wordlets_files[array_keys($wordlets_files)[0]]['props'];
-			$title = __( $props['name'] . ((isset($props['description']))?' (' . $props['description'] . ')':''), $this->text_domain );
+			$title = __( $props['name'] . ((isset($props['description']))?' (' . $props['description'] . ')':''), self::$TextDomain );
 		} else {
-			$title = __( 'New Wordlet', $this->text_domain );
+			$title = __( 'New Wordlet', self::$TextDomain );
 		}
 
 		$pages = wp_get_theme()->get_page_templates();
@@ -514,7 +749,7 @@ class Wordlets_Widget extends WP_Widget {
 			$instance['usage_category_' . $sh] = ( $category_found ) ? 1 : '';
 		}
 
-		$file = $this->_get_wordlet_files($instance['template']);
+		$file = self::GetWordletFiles( $instance['template'] );
 
 		if ( !isset($file['wordlets']) ) return $instance;
 
@@ -543,53 +778,47 @@ class Wordlets_Widget extends WP_Widget {
 
 					if ( $has_something ) {
 						$new_value_name_prefix = $value_prefix . '__' . $k;
-						$instance = $this->_update_instance( $instance, $new_instance, $value_name_prefix, $wordlet, $new_value_name_prefix, $i );
+						$instance = self::UpdateInstance( $instance, $new_instance, $value_name_prefix, $wordlet, $new_value_name_prefix, $i );
 						$k++;
 					}
 				}
 			} else {
-				$instance = $this->_update_instance( $instance, $new_instance, $value_prefix, $wordlet );
+				$instance = self::UpdateInstance( $instance, $new_instance, $value_prefix, $wordlet );
 			}
 		}
 
 		return $instance;
 	}
 
-	/* Custom methods */
+	/****************
+	 * Custom:
+	 ****************/
 
-	private function _update_instance( $instance, $new_instance, $value_prefix, $wordlet, $new_value_prefix = '', $i = null ) {
-		$names = array();
-		if ( $wordlet->type == 'object' ) {
-			$names = $wordlet->default;
-		} else {
-			$names = array('value' => $wordlet->default);
-		}
+	/**
+	 * Path to Wordlet plugin directory.
+	 */
+	private $_plugin_dir_path = '';
 
-		foreach ( $names as $name => $def ) {
-			$old_value_name = $value_prefix . '__' . $name;
-			if ( $new_value_prefix ) {
-				$new_value_name = $new_value_prefix . '__' . $name;
-			} else {
-				$new_value_name = $old_value_name;
-			}
-
-			if ( $i !== null ) {
-				$instance[$new_value_name] = ( ! empty( $new_instance[$old_value_name][$i] ) ) ? $new_instance[$old_value_name][$i] : '';
-			} else {
-				$instance[$new_value_name] = ( ! empty( $new_instance[$old_value_name] ) ) ? $new_instance[$old_value_name] : '';
-			}
-		}
-
-		return $instance;
-	}
-
+	/**
+	 * Current wordlet set parsed file.
+	 */
 	private $_file;
+
+	/**
+	 * Current widget instance.
+	 */
 	private $_instance;
+
+	/**
+	 * Alias self::AddWordletType to be a little less weird for theme actions.
+	 */
+	public function add_wordlet_type($name, $file) {
+		self::AddWordletType($name, $file);
+	}
 
 	/**
 	 * Render wordlet admin input values.
 	 */
-
 	private function _input($value_prefix, $friendly_name, $wordlet, $instance, $blank = false, $hide_labels = false, $array_value_prefix = '', $id_extra = '') {
 		if ( $wordlet->type == 'object' ) {
 			?>
@@ -627,7 +856,6 @@ class Wordlets_Widget extends WP_Widget {
 	/**
 	 * Render wordlet admin input value.
 	 */
-
 	private function _render_input($instance, $value_prefix, $friendly_name, $name, $type, $default = '', $description = '', $array_value_prefix = '', $hide_labels = false, $id_extra = '') {
 		$show_key = false; // TODO: See if I need to get rid of this.
 
@@ -648,13 +876,13 @@ class Wordlets_Widget extends WP_Widget {
 
 		$input_id = $this->get_field_id( $value_name ) . $id_extra;
 		$input_name = $this->get_field_name( $value_name ) . $value_array;
-		$text_domain = $this->text_domain;
+		$text_domain = self::$TextDomain;
 		$options = $default;
 
 		ob_start();
 		?>
 			<label for="<?php echo $input_id; ?>" class="wordlet-input-label">
-				<?php echo __($friendly_name, $this->text_domain) . (( $type != 'checkbox' ) ? ':' : ''); ?>
+				<?php echo __($friendly_name, self::$TextDomain) . (( $type != 'checkbox' ) ? ':' : ''); ?>
 			</label>
 		<?php
 
@@ -663,227 +891,22 @@ class Wordlets_Widget extends WP_Widget {
 
 		?>
 		<div class="wordlet-input wordlet-input-<?php echo $type ?>">
-			<?php if ( isset( $this->types[$type] ) && file_exists($this->types[$type]->file) ) {
-				include($this->types[$type]->file);
+			<?php if ( isset( self::$Types[$type] ) && file_exists(self::$Types[$type]->file) ) {
+				/**
+				 * Include the wordlet input file from {plugin}/inputs/{name}.php or {theme}/wordlets/inputs/{name}.php
+				 */
+				include(self::$Types[$type]->file);
 			} else {
 				trigger_error('Could not find template for wordlet "' . $name . '".', E_USER_WARNING);
 			} ?>
 		</div>
 		<?php
 	}
-
-	/**
-	 * Echo a wordlet input value to the screen.
-	 */
-
-	public function get_wordlet($name) {
-		if ( !isset($this->_file['wordlets']) || !isset($this->_file['wordlets'][$name]) ) return $values;
-
-		$wordlet = $this->_file['wordlets'][$name];
-
-		if ( $wordlet->type == 'object' ) {
-			$names = $wordlet->default;
-		} else {
-			$names = array('value' => $wordlet->default);
-		}
-
-		$value_prefix = $this->_file['name'] . '__' . $name;
-		$instance_values = array();
-		foreach ( $names as $name => $def ) {
-			$value_name = $value_prefix . '__' . $name;
-
-			if ( isset($this->_instance[$value_name]) ) {
-				$instance_values[$name] = __( $this->_instance[$value_name], $this->text_domain );
-				$has_something = true;
-			} else {
-				$instance_values[$name] = '';
-			}
-		}
-
-		if ( $has_something ) {
-			return new Wordlets_Wordlet_Value( $instance_values );
-		} else {
-			return null;
-		}
-	}
-
-	/**
-	 * 
-	 */
-
-	public function get_value($wordlet, $name, $position) {
-		if ( $wordlet->type == 'object' ) {
-			$names = $wordlet->default;
-		} else {
-			$names = array('value' => $wordlet->default);
-		}
-
-		$value_prefix = $this->_file['name'] . '__' . $wordlet->_name . (($position !== null)? '__' . $position : '');
-		$value_name = $value_prefix . (($name != null)?'__' . $name:'');
-
-		if ( isset($this->_instance[$value_name]) ) {
-			return $this->_instance[$value_name];
-		}
-
-		return '';
-	}
-
-	/**
-	 * 
-	 */
-
-	public function has_values($wordlet, $position) {
-		if ( $wordlet->type == 'object' ) {
-			$names = $wordlet->default;
-		} else {
-			$names = array('value' => $wordlet->default);
-		}
-
-		$value_prefix = $this->_file['name'] . '__' . $wordlet->_name . '__' . $position;
-		foreach ( $names as $name => $def ) {
-			$value_name = $value_prefix . '__' . $name;
-
-			if ( isset($this->_instance[$value_name]) ) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	public static $WordletFiles = null;
-
-	/**
-	 * Return information/wordlet settings in a single wordlet file or all wordlet files within theme.
-	 */
-
-	private function _get_wordlet_files( $template = null ) {
-		$wordlets_files = array();
-		$tpl_dir = get_template_directory();
-
-		if ( $template ) {
-			if ( has_action('wordlets-get-cache-file-parse') ) {
-				$data = do_action('wordlets-get-cache-file-parse', 'wordlets-file-' . $name);
-			} else {
-				$data = wp_cache_get('wordlets-file-' . $template, 'wordlets-file');
-			}
-
-			if ( false !== $data ) return $data;
-
-			if ( isset(self::$WordletFiles[$template]) ) return self::$WordletFiles[$template];
-
-			$files = array(
-				$tpl_dir . DIRECTORY_SEPARATOR . 'wordlets' . DIRECTORY_SEPARATOR . $template . '.php',
-				$tpl_dir . DIRECTORY_SEPARATOR . 'wordlets' . DIRECTORY_SEPARATOR . 'wordlet-' . $template . '.php',
-				$tpl_dir . DIRECTORY_SEPARATOR . 'wordlets-' . $template . '.php',
-			);
-
-			foreach ( $files as $file ) {
-				if ( is_readable($file) ) {
-					$wf = $this->_parse_file( $file, $template );
-					return $wf;
-				}
-			}
-		} else {
-			if ( self::$WordletFiles ) return self::$WordletFiles;
-
-			// Check the root dir first
-			$files = scandir( $tpl_dir );
-			foreach ( $files as $file ) {
-				if ( preg_match('/^wordlets\-(.+)\.php$/', $file, $matches) ) {
-					$name = $matches[1];
-					$wordlets_files[$name] = $this->_parse_file( $tpl_dir . DIRECTORY_SEPARATOR . $file, $name );
-				}
-			}
-
-			// Then scan the wordlets dir (override root files)
-			$wordlets_dir = $tpl_dir . DIRECTORY_SEPARATOR . 'wordlets';
-			if ( is_readable($wordlets_dir) && $files = scandir( $wordlets_dir ) ) {
-				foreach ( $files as $file ) {
-					if ( preg_match('/^wordlets\-(.+)\.php$/', $file, $matches) || preg_match('/^(.+)\.php$/', $file, $matches) ) {
-						$name = $matches[1];
-						$wordlets_files[$name] = $this->_parse_file( $tpl_dir . DIRECTORY_SEPARATOR . 'wordlets' . DIRECTORY_SEPARATOR . $file, $name );
-					}
-				}
-			}
-
-			self::$WordletFiles = $wordlets_files;
-
-			return $wordlets_files;
-		}
-
-	}
-
-	/**
-	 * Return properties and wordlet objects within a wordlet file.
-	 */
-
-	private function _parse_file( $file, $name ) {
-		$file_props = array('file' => $file);
-		$content = file_get_contents($file);
-		$wordlets = array();
-
-		// Get properties in first comment
-		if ( preg_match('/\/\*\*(.*)\*\//is', $content, $matches) && !empty($matches[1]) ) {
-			$comment = preg_replace('/([\r\n])*\s*\*\s*/', '$1', $matches[1]);
-
-			if ( preg_match_all('/@((name)|(description))\s*(.+?)(?=[\r\n]@)/is', $comment, $properties) && !empty($properties[1]) ) {
-				foreach ( $properties[1] as $key => $property ) {
-					$file_props[strtolower(trim($property))] = trim($properties[4][$key]);
-				}
-			}
-
-			//1 Array
-			//2 type
-			//3 name
-			//4 default or attributes or options
-			//8 Label
-			//11 Description
-			if ( preg_match_all('/@wordlet(Array)?\s*([a-z]+)\s+\$([a-z][a-z_0-9]+)\s*(([a-z0-9]+)|("[^"]*")|(\{[^\}]*\}))\s*(([a-z]+)|("[^"]*"))?\s*(([a-z]+)|("[^"]*"))?\s*/is', $comment, $w) ) {
-				foreach ( $w[2] as $key => $type ) {
-					if ( false === array_search($type, array_keys( $this->types ) ) ) continue;
-
-					$wordlet = new Wordlets_Wordlet($w[3][$key], $w[2][$key], trim($w[4][$key], '"'), trim($w[8][$key], '"'), trim($w[11][$key], '"'), trim($w[1][$key], '"'));
-					$wordlets[$w[3][$key]] = $wordlet;
-				}
-			}
-		}
-
-		$data = array('name' => $name, 'props' => $file_props, 'wordlets' => $wordlets);
-
-		// Allow themes to define their own caching method
-		if ( has_action('wordlets-set-cache-file-parse') ) {
-			do_action('wordlets-set-cache-file-parse', 'wordlets-file-' . $name, $data);
-		} else {
-			wp_cache_set('wordlets-file-' . $name, $data, 'wordlets-file', 3600 * 24 * 365);
-		}
-
-		return $data;
-	}
-
-	static $me;
-
-	/**
-	 * See if current widget's wordlet has any values
-	 */
-
-	static function HasValues($wordlet, $position) {
-		return self::$me->has_values($wordlet, $position);
-	}
-
-	/**
-	 * Get current widget's value
-	 */
-
-	static function GetValue($wordlet, $name, $position = null) {
-		return self::$me->get_value($wordlet, $name, $position);
-	}
 }
 
 /**
  * Container for admin input settings.
  */
-
 class Wordlets_Wordlet implements Iterator {
 	public $_name;
 	public $type;

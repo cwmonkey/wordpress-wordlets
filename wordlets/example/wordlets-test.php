@@ -8,7 +8,7 @@
  * @name        Test
  * @description Test Wordlet Template
  *
- * @wordlet      type     $name ("Default" | { type $property "Default", ... } | { value = Option | Option | [tags|categories] } ) "Label" "Long Description"
+ * @wordlet      type     $name ("Default" | { type $property (select options)|"Default" "Description or first select option", ... } | { value = Option | Option | [tags|categories] } ) "Label" "Long Description"
  *
  * @wordletArray select   $tags { [tags], small = Small, Thing } Tags "Select a tag"
  * @wordletArray select   $categories { [categories] } Categories "Select a category"

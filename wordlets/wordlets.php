@@ -100,10 +100,10 @@ class Wordlets_Widget extends WP_Widget {
 	 * See if current widget's wordlet has any values
 	 */
 	static function HasValues($wordlet, $position) {
-		if ( $wordlet->type == 'object' ) {
-			$names = $wordlet->default;
+		if ( $wordlet->_type == 'object' ) {
+			$names = $wordlet->_default;
 		} else {
-			$names = array('value' => $wordlet->default);
+			$names = array('value' => $wordlet->_default);
 		}
 
 		$value_prefix = self::$me->_file['name'] . '__' . $wordlet->_name . '__' . $position;
@@ -122,10 +122,10 @@ class Wordlets_Widget extends WP_Widget {
 	 * Get current widget's value
 	 */
 	static function GetValue($wordlet, $name, $position = null) {
-		if ( $wordlet->type == 'object' ) {
-			$names = $wordlet->default;
+		if ( $wordlet->_type == 'object' ) {
+			$names = $wordlet->_default;
 		} else {
-			$names = array('value' => $wordlet->default);
+			$names = array('value' => $wordlet->_default);
 		}
 
 		$value_prefix = self::$me->_file['name'] . '__' . $wordlet->_name . (($position !== null)? '__' . $position : '');
@@ -286,10 +286,10 @@ class Wordlets_Widget extends WP_Widget {
 	 */
 	public static function UpdateInstance( $instance, $new_instance, $value_prefix, $wordlet, $new_value_prefix = '', $i = null ) {
 		$names = array();
-		if ( $wordlet->type == 'object' ) {
-			$names = $wordlet->default;
+		if ( $wordlet->_type == 'object' ) {
+			$names = $wordlet->_default;
 		} else {
-			$names = array('value' => $wordlet->default);
+			$names = array('value' => $wordlet->_default);
 		}
 
 		foreach ( $names as $name => $def ) {
@@ -633,11 +633,11 @@ class Wordlets_Widget extends WP_Widget {
 			<?php
 			foreach ( $info['wordlets'] as $wname => $wordlet ) {
 				$friendly_name = $wname;
-				if ( isset($wordlet->label) ) {
-					$friendly_name = $wordlet->label;
+				if ( isset($wordlet->_label) ) {
+					$friendly_name = $wordlet->_label;
 				}
 
-				if ( $wordlet->is_array ) {
+				if ( $wordlet->_is_array ) {
 					?>
 					<fieldset class="wordlet-array">
 					<legend><?php _e( $friendly_name ); ?></legend>
@@ -648,10 +648,10 @@ class Wordlets_Widget extends WP_Widget {
 
 						$id_extra = '_' . preg_replace('/[\.\s]/', '_', microtime());
 
-						if ( $wordlet->type == 'object' ) {
-							$names = $wordlet->default;
+						if ( $wordlet->_type == 'object' ) {
+							$names = $wordlet->_default;
 						} else {
-							$names = array('value' => $wordlet->default);
+							$names = array('value' => $wordlet->_default);
 						}
 
 						$has_something = false;
@@ -755,16 +755,16 @@ class Wordlets_Widget extends WP_Widget {
 
 		foreach ( $file['wordlets'] as $wname => $wordlet ) {
 			$value_prefix = $file['name'] . '__' . $wname;
-			if ( $wordlet->is_array ) {
+			if ( $wordlet->_is_array ) {
 				$k = 0;
 				for ( $i = 0; $i < 100; $i++ ) {
 					$has_something = false;
 					$value_name_prefix = $value_prefix;
 
-					if ( $wordlet->type == 'object' ) {
-						$names = $wordlet->default;
+					if ( $wordlet->_type == 'object' ) {
+						$names = $wordlet->_default;
 					} else {
-						$names = array('value' => $wordlet->default);
+						$names = array('value' => $wordlet->_default);
 					}
 
 					// If all values are empty, delete it
@@ -820,11 +820,11 @@ class Wordlets_Widget extends WP_Widget {
 	 * Render wordlet admin input values.
 	 */
 	private function _input($value_prefix, $friendly_name, $wordlet, $instance, $blank = false, $hide_labels = false, $array_value_prefix = '', $id_extra = '') {
-		if ( $wordlet->type == 'object' ) {
+		if ( $wordlet->_type == 'object' ) {
 			?>
 			<fieldset class="wordlet-object">
 			<?php
-				if ( !$wordlet->is_array ) {
+				if ( !$wordlet->_is_array ) {
 					?><legend><?php echo _e($friendly_name) ?></legend><?php
 				}
 
@@ -832,8 +832,8 @@ class Wordlets_Widget extends WP_Widget {
 					<label class="wordlet-description"><?=$wordlet->_description ?></label><?php
 				}
 
-				foreach ( $wordlet->default as $name => $w ) {
-					$this->_render_input($instance, $value_prefix, $w->label, $name, $w->type, $w->default, $w->_description, $array_value_prefix, false, $id_extra);
+				foreach ( $wordlet->_default as $name => $w ) {
+					$this->_render_input($instance, $value_prefix, $w->_label, $name, $w->_type, $w->_default, $w->_description, $array_value_prefix, false, $id_extra);
 				}
 			?>
 			</fieldset>
@@ -844,12 +844,12 @@ class Wordlets_Widget extends WP_Widget {
 				$description = $wordlet->_description;
 			}
 
-			$default = $wordlet->default;
-			$type = $wordlet->type;
+			$default = $wordlet->_default;
+			$type = $wordlet->_type;
 
 			if ( $type == 'image' ) $default = '';
 
-			$this->_render_input($instance, $value_prefix, $friendly_name, 'value', $type, $default, $description, $array_value_prefix, $wordlet->is_array, $id_extra);
+			$this->_render_input($instance, $value_prefix, $friendly_name, 'value', $type, $default, $description, $array_value_prefix, $wordlet->_is_array, $id_extra);
 		}
 	}
 
@@ -909,17 +909,17 @@ class Wordlets_Widget extends WP_Widget {
  */
 class Wordlets_Wordlet implements Iterator {
 	public $_name;
-	public $type;
-	public $default;
-	public $label;
+	public $_type;
+	public $_default;
+	public $_label;
 	public $_description;
-	public $is_array;
+	public $_is_array;
 
 	public function __construct($name, $type, $default = null, $label = null, $description = null, $is_array = false) {
 		$this->position = 0;
 
 		$this->_name = $name;
-		$this->type = $type;
+		$this->_type = $type;
 
 		if ( $type == 'object' && !is_array($default) ) {
 			//1 type
@@ -932,9 +932,9 @@ class Wordlets_Wordlet implements Iterator {
 				$default = array();
 				foreach ( $matches[2] as $key => $val ) {
 					$val = trim($val);
-					$matches[3][$key] = preg_replace('/^\(([^\)]+)\)$/', '{$1}', $matches[3][$key]);
+					$matches[3][$key] = preg_replace('/^\(([^\)]+)\)$/', '{$1}', trim($matches[3][$key]));
 
-					$default[$val] = new Wordlets_Wordlet($val, $matches[1][$key], trim($matches[3][$key], '"'), trim($matches[7][$key], '" '), trim($matches[10][$key], '" '));
+					$default[$val] = new Wordlets_Wordlet($val, $matches[1][$key], trim(trim($matches[3][$key]), '"'), trim(trim($matches[7][$key]), '" '), trim(trim($matches[10][$key]), '" '));
 				}
 			}
 		} elseif ( $type == 'select' && !is_array($default) ) {
@@ -953,16 +953,16 @@ class Wordlets_Wordlet implements Iterator {
 			}
 		}
 
-		$this->default = $default;
-		$this->label = ( $label ) ? $label : $name;
+		$this->_default = $default;
+		$this->_label = ( $label ) ? $label : $name;
 		$this->_description = $description;
 
-		$this->is_array = $is_array;
+		$this->_is_array = $is_array;
 	}
 
 	public function __get($name) {
 		// TODO: similar logic to current()
-		if ( $this->is_array ) {
+		if ( $this->_is_array ) {
 			$value = Wordlets_Widget::GetValue($this, $name, $this->position);
 		} else {
 			$value = Wordlets_Widget::GetValue($this, $name);
@@ -978,7 +978,7 @@ class Wordlets_Wordlet implements Iterator {
 	}
 
 	public function __toString() {
-		if ( $this->is_array ) {
+		if ( $this->_is_array ) {
 			$value = Wordlets_Widget::GetValue($this, 'value', $this->position);
 		} else {
 			$value = Wordlets_Widget::GetValue($this, 'value');
@@ -995,7 +995,7 @@ class Wordlets_Wordlet implements Iterator {
 
 	function current() {
 		// TODO: similar logic to __get()
-		if ( $this->is_array ) {
+		if ( $this->_is_array ) {
 			$value = Wordlets_Widget::GetValue($this, 'value', $this->position);
 		} else {
 			$value = Wordlets_Widget::GetValue($this, 'value');

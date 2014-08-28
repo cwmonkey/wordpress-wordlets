@@ -828,20 +828,20 @@ class Wordlets_Widget extends WP_Widget {
 					?><legend><?php echo _e($friendly_name) ?></legend><?php
 				}
 
-				if ( $wordlet->description ) { ?>
-					<label class="wordlet-description"><?=$wordlet->description ?></label><?php
+				if ( $wordlet->_description ) { ?>
+					<label class="wordlet-description"><?=$wordlet->_description ?></label><?php
 				}
 
 				foreach ( $wordlet->default as $name => $w ) {
-					$this->_render_input($instance, $value_prefix, $w->label, $name, $w->type, $w->default, $w->description, $array_value_prefix, false, $id_extra);
+					$this->_render_input($instance, $value_prefix, $w->label, $name, $w->type, $w->default, $w->_description, $array_value_prefix, false, $id_extra);
 				}
 			?>
 			</fieldset>
 			<?php
 		} else {
 			$description = '';
-			if ( isset($wordlet->description) ) {
-				$description = $wordlet->description;
+			if ( isset($wordlet->_description) ) {
+				$description = $wordlet->_description;
 			}
 
 			$default = $wordlet->default;
@@ -912,7 +912,7 @@ class Wordlets_Wordlet implements Iterator {
 	public $type;
 	public $default;
 	public $label;
-	public $description;
+	public $_description;
 	public $is_array;
 
 	public function __construct($name, $type, $default = null, $label = null, $description = null, $is_array = false) {
@@ -928,12 +928,13 @@ class Wordlets_Wordlet implements Iterator {
 			//7 Label
 			//10 Description
 
-			if ( preg_match_all('/([a-z]+)\s+\$([a-z][a-z_0-9]+)\s*(([a-z0-9]+)|("[^"]*")|(\([^\)]*\)))\s*(([a-z]+)|("[^"]*"))?\s*(([a-z]+)|("[^"]*"))?\s*,?/is',  $default, $matches) ) {
+			if ( preg_match_all('/([a-z]+)\s+\$([a-z][a-z_0-9]+\s*)(([a-z0-9]+)|("[^"]*")|(\([^\)]*\))\s*)?(([a-z]+)|("[^"]*")\s*)?(([a-z]+)|("[^"]*")\s*)?,?/is',  $default, $matches) ) {
 				$default = array();
 				foreach ( $matches[2] as $key => $val ) {
+					$val = trim($val);
 					$matches[3][$key] = preg_replace('/^\(([^\)]+)\)$/', '{$1}', $matches[3][$key]);
 
-					$default[$val] = new Wordlets_Wordlet($val, $matches[1][$key], trim($matches[3][$key], '"'), trim($matches[7][$key], '"'), trim($matches[10][$key], '"'));
+					$default[$val] = new Wordlets_Wordlet($val, $matches[1][$key], trim($matches[3][$key], '"'), trim($matches[7][$key], '" '), trim($matches[10][$key], '" '));
 				}
 			}
 		} elseif ( $type == 'select' && !is_array($default) ) {
@@ -954,7 +955,7 @@ class Wordlets_Wordlet implements Iterator {
 
 		$this->default = $default;
 		$this->label = ( $label ) ? $label : $name;
-		$this->description = $description;
+		$this->_description = $description;
 
 		$this->is_array = $is_array;
 	}

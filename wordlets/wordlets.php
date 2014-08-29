@@ -380,9 +380,9 @@ class Wordlets_Widget extends WP_Widget {
 
 		// Get properties in first comment
 		if ( preg_match('/\/\*\*(.*)\*\//is', $content, $matches) && !empty($matches[1]) ) {
-			$comment = preg_replace('/([\r\n])*\s*\*\s*/', '$1', $matches[1]);
+			$comment = preg_replace('/([\r\n]+)*[ \t]*\*[ \t]*/is', '$1', $matches[1]);
 
-			if ( preg_match_all('/@((name)|(description))\s*(.+?)(?=[\r\n]@)/is', $comment, $properties) && !empty($properties[1]) ) {
+			if ( preg_match_all('/@((name)|(description))\s*([^@]+?)(?=[\r\n]*@)/is', $comment, $properties) && !empty($properties[1]) ) {
 				foreach ( $properties[1] as $key => $property ) {
 					$file_props[strtolower(trim($property))] = trim($properties[4][$key]);
 				}
@@ -541,7 +541,7 @@ class Wordlets_Widget extends WP_Widget {
 							$display = $info['props']['name'];
 						}
 
-						if ( isset($info['props']['description']) ) {
+						if ( !empty($info['props']['description']) ) {
 							$display .= ' (' . $info['props']['description'] . ')';
 						}
 
@@ -938,17 +938,18 @@ class Wordlets_Wordlet implements Iterator {
 				}
 			}
 		} elseif ( $type == 'select' && !is_array($default) ) {
-			//2 value
-			//3 text
-			//4 Text
-			preg_match_all('/[\{\r\n\s]*(([^,]+?)\s*=\s*([^,\}\r\n]+))|([^,\{\}\=\r\n]+)\s*[,\}\r\n]/i', $default, $matches);
+			//2 name
+			//3 value
+			//6 Text
+			preg_match_all('/[\{\r\n\s]*(([^,]+?)\s*=\s*(("[^"]*")|([^,\}\r\n]+)))|([^,\{\}\=\r\n]+)\s*[,\}\r\n]/i', $default, $matches);
 
 			$default = array();
 			foreach ( $matches[2] as $key => $val ) {
+				$val = trim($val);
 				if ( !empty($val) ) {
-					$default[$val] = $matches[3][$key];
+					$default[$val] = trim($matches[3][$key], '"');
 				} else {
-					$default[$matches[4][$key]] = trim($matches[4][$key]);
+					$default[$matches[6][$key]] = trim($matches[6][$key]);
 				}
 			}
 		}

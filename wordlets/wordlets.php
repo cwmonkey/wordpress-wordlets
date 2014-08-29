@@ -948,7 +948,7 @@ class Wordlets_Wordlet implements Iterator {
 				$val = trim($val);
 				if ( !empty($val) ) {
 					$default[$val] = trim($matches[3][$key], '"');
-				} else {
+				} elseif ( trim($matches[6][$key]) ) {
 					$default[$matches[6][$key]] = trim($matches[6][$key]);
 				}
 			}

@@ -49,13 +49,13 @@ $(function() {
 			var $title = $parent.find('.wordlet-widget-title');
 
 			// Change the title
-			if ( !$title.val() || $title.val() == 'New Widget' || $title.val() == $this.find('option[value="' + $active.data('template') + '"]').html() ) {
-				$title.val($this.find('option[value="' + $this.val() + '"]').html());
+			if ( !$title.val() || $title.val() == 'New Widget' || $title.val() == $this.find('option[value="' + $active.data('template') + '"]').text() ) {
+				$title.val($this.find('option[value="' + $this.val() + '"]').text());
 			}
 
 			// Show/hide the nodes
 			$active = $parent.find('.wordlet-widget-set[data-template="' + val + '"]').addClass('active');
-			$active.siblings('.wordlet-widget-set').removeClass('active')
+			$active.siblings('.wordlet-widget-set').removeClass('active');
 		})
 		// Fill in the title if it's blank
 		.delegate('.widget[id*="wordlets_widget"]', 'click', function() {

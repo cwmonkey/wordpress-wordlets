@@ -29,10 +29,10 @@ defined('ABSPATH') or die();
 
 // Load the widget on widgets_init
 function load_wordlets_widget() {
-	register_widget('Wordlets_Widget');
+	register_widget( 'Wordlets_Widget' );
 }
 
-add_action('widgets_init', 'load_wordlets_widget');
+add_action( 'widgets_init', 'load_wordlets_widget' );
 
 /**
  * Wordlets_Widget class
@@ -92,53 +92,6 @@ class Wordlets_Widget extends WP_Widget {
 	public static $WordletFiles = null;
 
 	/**
-	 * Delegate containing the current wordlet being rendered.
-	 */
-	static $me;
-
-	/**
-	 * See if current widget's wordlet has any values
-	 */
-	static function HasValues($wordlet, $position) {
-		if ( $wordlet->_type == 'object' ) {
-			$names = $wordlet->_default;
-		} else {
-			$names = array('value' => $wordlet->_default);
-		}
-
-		$value_prefix = self::$me->_file['name'] . '__' . $wordlet->_name . '__' . $position;
-		foreach ( $names as $name => $def ) {
-			$value_name = $value_prefix . '__' . $name;
-
-			if ( isset(self::$me->_instance[$value_name]) ) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	/**
-	 * Get current widget's value
-	 */
-	static function GetValue($wordlet, $name, $position = null) {
-		if ( $wordlet->_type == 'object' ) {
-			$names = $wordlet->_default;
-		} else {
-			$names = array('value' => $wordlet->_default);
-		}
-
-		$value_prefix = self::$me->_file['name'] . '__' . $wordlet->_name . (($position !== null)? '__' . $position : '');
-		$value_name = $value_prefix . (($name != null)?'__' . $name:'');
-
-		if ( isset(self::$me->_instance[$value_name]) ) {
-			return self::$me->_instance[$value_name];
-		}
-
-		return '';
-	}
-
-	/**
 	 * Add wordlet type/admin input.
 	 *
 	 * Used for adding custom inputs within your {theme}/wordlets/inputs directory.
@@ -146,7 +99,7 @@ class Wordlets_Widget extends WP_Widget {
 	 * @param string $name    Short name of type [a-z0-9_].
 	 * @param string $file    Full file path of admin input template.
 	 */
-	public static function AddWordletType($name, $file) {
+	public static function AddWordletType( $name, $file ) {
 		$type = new stdClass();
 		$type->name = $name;
 		$type->file = $file;
@@ -192,7 +145,7 @@ class Wordlets_Widget extends WP_Widget {
 	/**
 	 * Can widget display on this page?
 	 */
-	public static function CanShowWidget($instance) {
+	public static function CanShowWidget( &$instance ) {
 		// Look for pagination constraints
 		if ( !empty( $instance['paged'] ) ) {
 			$paged = is_paged();
@@ -313,7 +266,7 @@ class Wordlets_Widget extends WP_Widget {
 	/**
 	 * Return information/wordlet settings in a single wordlet file or all wordlet files within theme.
 	 */
-	public static function GetWordletFiles( $template = null ) {
+	public static function GetWordletFiles( &$instance, $template = null ) {
 		$wordlets_files = array();
 		$tpl_dir = get_template_directory();
 
@@ -336,7 +289,7 @@ class Wordlets_Widget extends WP_Widget {
 
 			foreach ( $files as $file ) {
 				if ( is_readable($file) ) {
-					$wf = self::ParseFile( $file, $template );
+					$wf = self::ParseFile( $file, $instance, $template );
 					return $wf;
 				}
 			}
@@ -348,7 +301,7 @@ class Wordlets_Widget extends WP_Widget {
 			foreach ( $files as $file ) {
 				if ( preg_match('/^wordlets\-(.+)\.php$/', $file, $matches) ) {
 					$name = $matches[1];
-					$wordlets_files[$name] = self::ParseFile( $tpl_dir . DIRECTORY_SEPARATOR . $file, $name );
+					$wordlets_files[$name] = self::ParseFile( $tpl_dir . DIRECTORY_SEPARATOR . $file, $instance, $name );
 				}
 			}
 
@@ -358,7 +311,7 @@ class Wordlets_Widget extends WP_Widget {
 				foreach ( $files as $file ) {
 					if ( preg_match('/^wordlets\-(.+)\.php$/', $file, $matches) || preg_match('/^(.+)\.php$/', $file, $matches) ) {
 						$name = $matches[1];
-						$wordlets_files[$name] = self::ParseFile( $tpl_dir . DIRECTORY_SEPARATOR . 'wordlets' . DIRECTORY_SEPARATOR . $file, $name );
+						$wordlets_files[$name] = self::ParseFile( $tpl_dir . DIRECTORY_SEPARATOR . 'wordlets' . DIRECTORY_SEPARATOR . $file, $instance, $name );
 					}
 				}
 			}
@@ -373,18 +326,19 @@ class Wordlets_Widget extends WP_Widget {
 	/**
 	 * Return properties and wordlet objects within a wordlet file.
 	 */
-	public static function ParseFile( $file, $name ) {
+	public static function ParseFile( $file, &$instance, $name ) {
 		$file_props = array('file' => $file);
-		$content = file_get_contents($file);
+		$content = file_get_contents( $file );
 		$wordlets = array();
+		$data = array();
 
 		// Get properties in first comment
-		if ( preg_match('/\/\*\*(.*)\*\//is', $content, $matches) && !empty($matches[1]) ) {
-			$comment = preg_replace('/([\r\n]+)*[ \t]*\*[ \t]*/is', '$1', $matches[1]);
+		if ( preg_match( '/\/\*\*(.*)\*\//is', $content, $matches ) && !empty( $matches[1] ) ) {
+			$comment = preg_replace( '/([\r\n]+)*[ \t]*\*[ \t]*/is', '$1', $matches[1] );
 
-			if ( preg_match_all('/@((name)|(description))\s*([^@]+?)(?=[\r\n]*@)/is', $comment, $properties) && !empty($properties[1]) ) {
+			if ( preg_match_all( '/@((name)|(description))\s*([^@]+?)(?=[\r\n]*@)/is', $comment, $properties ) && !empty( $properties[1] ) ) {
 				foreach ( $properties[1] as $key => $property ) {
-					$file_props[strtolower(trim($property))] = trim($properties[4][$key]);
+					$file_props[strtolower( trim( $property ) )] = trim( $properties[4][$key] );
 				}
 			}
 
@@ -394,17 +348,19 @@ class Wordlets_Widget extends WP_Widget {
 			//4 default or attributes or options
 			//8 Label
 			//11 Description
-			if ( preg_match_all('/@wordlet(Array)?\s*([a-z]+)\s+\$([a-z][a-z_0-9]+)\s*(([a-z0-9]+)|("[^"]*")|(\{[^\}]*\}))\s*(([a-z]+)|("[^"]*"))?\s*(([a-z]+)|("[^"]*"))?\s*/is', $comment, $w) ) {
+			if ( preg_match_all( '/@wordlet(Array)?\s*([a-z]+)\s+\$([a-z][a-z_0-9]+)\s*(([a-z0-9]+)|("[^"]*")|(\{[^\}]*\}))\s*(([a-z]+)|("[^"]*"))?\s*(([a-z]+)|("[^"]*"))?\s*/is', $comment, $w ) ) {
 				foreach ( $w[2] as $key => $type ) {
-					if ( false === array_search($type, array_keys( self::$Types ) ) ) continue;
+					if ( false === array_search( $type, array_keys( self::$Types ) ) ) continue;
 
-					$wordlet = new Wordlets_Wordlet($w[3][$key], $w[2][$key], trim($w[4][$key], '"'), trim($w[8][$key], '"'), trim($w[11][$key], '"'), trim($w[1][$key], '"'));
+					$wordlet = new Wordlets_Wordlet( $name, $instance, $w[3][$key], $w[2][$key], trim( $w[4][$key], '"' ), trim( $w[8][$key], '"' ), trim( $w[11][$key], '"' ), trim( $w[1][$key], '"' ) );
 					$wordlets[$w[3][$key]] = $wordlet;
 				}
 			}
 		}
 
-		$data = array('name' => $name, 'props' => $file_props, 'wordlets' => $wordlets);
+		$data['name'] = $name;
+		$data['props'] = $file_props;
+		$data['wordlets'] = $wordlets;
 
 		// Allow themes to define their own caching method
 		if ( has_action('wordlets-set-cache-file-parse') ) {
@@ -414,6 +370,15 @@ class Wordlets_Widget extends WP_Widget {
 		}
 
 		return $data;
+	}
+
+	/**
+	 * Set wordlet values to current widget instance.
+	 */
+	public static function SetInstance( &$instance, &$wordlets ) {
+		foreach ( $wordlets as $wordlet ) {
+			$wordlet->set_instance( $instance );
+		}
 	}
 
 	/********************************
@@ -430,7 +395,7 @@ class Wordlets_Widget extends WP_Widget {
 	function __construct() {
 		parent::__construct(
 			'wordlets_widget', // Base ID
-			__('Wordlets', self::$TextDomain), // Name
+			__( 'Wordlets', self::$TextDomain ), // Name
 			array( 'description' => __( 'Widgets for Developers', self::$TextDomain ), ) // Args
 		);
 
@@ -450,7 +415,7 @@ class Wordlets_Widget extends WP_Widget {
 		}
 
 		// Only do this once per page
-		if ( !count(self::$Types) ) {
+		if ( !count( self::$Types ) ) {
 			// "object" is a wordlet type with no associated input file
 			self::AddWordletType( 'object', null );
 
@@ -461,9 +426,6 @@ class Wordlets_Widget extends WP_Widget {
 			// Allow themes to add inputs
 			do_action( 'wordlets-construct', $this );
 		}
-
-		// Give global access to current Wordlet wifget
-		self::$me = $this;
 	}
 
 	/**
@@ -475,14 +437,16 @@ class Wordlets_Widget extends WP_Widget {
 	 * @param array $instance Saved values from database.
 	 */
 	public function widget( $args, $instance ) {
-		$show = self::CanShowWidget($instance);
+		$show = self::CanShowWidget( $instance );
 
 		if ( !$show ) return false;
 
-		$this->_file = $file = self::GetWordletFiles( $instance['template'] );
+		$this->_file = $file = self::GetWordletFiles( $instance, $instance['template'] );
 		$this->_instance = $instance;
 
 		echo $args['before_widget'];
+
+		self::SetInstance( $instance, $file['wordlets'] );
 
 		extract($file['wordlets']);
 
@@ -506,7 +470,7 @@ class Wordlets_Widget extends WP_Widget {
 	 * @param array $instance Previously saved values from database.
 	 */
 	public function form( $instance ) {
-		$wordlets_files = self::GetWordletFiles();
+		$wordlets_files = self::GetWordletFiles( $instance );
 
 		if ( isset( $instance[ 'title' ] ) ) {
 			$title = $instance[ 'title' ];
@@ -749,7 +713,7 @@ class Wordlets_Widget extends WP_Widget {
 			$instance['usage_category_' . $sh] = ( $category_found ) ? 1 : '';
 		}
 
-		$file = self::GetWordletFiles( $instance['template'] );
+		$file = self::GetWordletFiles( $instance, $instance['template'] );
 
 		if ( !isset($file['wordlets']) ) return $instance;
 
@@ -812,28 +776,28 @@ class Wordlets_Widget extends WP_Widget {
 	/**
 	 * Alias self::AddWordletType to be a little less weird for theme actions.
 	 */
-	public function add_wordlet_type($name, $file) {
-		self::AddWordletType($name, $file);
+	public function add_wordlet_type( $name, $file ) {
+		self::AddWordletType( $name, $file );
 	}
 
 	/**
 	 * Render wordlet admin input values.
 	 */
-	private function _input($value_prefix, $friendly_name, $wordlet, $instance, $blank = false, $hide_labels = false, $array_value_prefix = '', $id_extra = '') {
+	private function _input( $value_prefix, $friendly_name, $wordlet, &$instance, $blank = false, $hide_labels = false, $array_value_prefix = '', $id_extra = '' ) {
 		if ( $wordlet->_type == 'object' ) {
 			?>
 			<fieldset class="wordlet-object">
 			<?php
 				if ( !$wordlet->_is_array ) {
-					?><legend><?php echo _e($friendly_name) ?></legend><?php
+					?><legend><?php echo __( $friendly_name ) ?></legend><?php
 				}
 
 				if ( $wordlet->_description ) { ?>
-					<label class="wordlet-description"><?=$wordlet->_description ?></label><?php
+					<label class="wordlet-description"><?php echo $wordlet->_description ?></label><?php
 				}
 
 				foreach ( $wordlet->_default as $name => $w ) {
-					$this->_render_input($instance, $value_prefix, $w->_label, $name, $w->_type, $w->_default, $w->_description, $array_value_prefix, false, $id_extra);
+					$this->_render_input( $instance, $value_prefix, $w->_label, $name, $w->_type, $w->_default, $w->_description, $array_value_prefix, false, $id_extra );
 				}
 			?>
 			</fieldset>
@@ -849,19 +813,19 @@ class Wordlets_Widget extends WP_Widget {
 
 			if ( $type == 'image' ) $default = '';
 
-			$this->_render_input($instance, $value_prefix, $friendly_name, 'value', $type, $default, $description, $array_value_prefix, $wordlet->_is_array, $id_extra);
+			$this->_render_input( $instance, $value_prefix, $friendly_name, 'value', $type, $default, $description, $array_value_prefix, $wordlet->_is_array, $id_extra );
 		}
 	}
 
 	/**
 	 * Render wordlet admin input value.
 	 */
-	private function _render_input($instance, $value_prefix, $friendly_name, $name, $type, $default = '', $description = '', $array_value_prefix = '', $hide_labels = false, $id_extra = '') {
+	private function _render_input( &$instance, $value_prefix, $friendly_name, $name, $type, $default = '', $description = '', $array_value_prefix = '', $hide_labels = false, $id_extra = '' ) {
 		$show_key = false; // TODO: See if I need to get rid of this.
 
 		$value_name = $value_prefix . '__' . $name;
 
-		if ( isset($instance[$value_name]) ) {
+		if ( isset( $instance[$value_name] ) ) {
 			$value = $instance[$value_name];
 		} else {
 			$value = $default;
@@ -882,7 +846,7 @@ class Wordlets_Widget extends WP_Widget {
 		ob_start();
 		?>
 			<label for="<?php echo $input_id; ?>" class="wordlet-input-label">
-				<?php echo __($friendly_name, self::$TextDomain) . (( $type != 'checkbox' ) ? ':' : ''); ?>
+				<?php echo __( $friendly_name, self::$TextDomain ) . ( ( $type != 'checkbox' ) ? ':' : '' ); ?>
 			</label>
 		<?php
 
@@ -891,13 +855,13 @@ class Wordlets_Widget extends WP_Widget {
 
 		?>
 		<div class="wordlet-input wordlet-input-<?php echo $type ?>">
-			<?php if ( isset( self::$Types[$type] ) && file_exists(self::$Types[$type]->file) ) {
+			<?php if ( isset( self::$Types[$type] ) && file_exists( self::$Types[$type]->file ) ) {
 				/**
 				 * Include the wordlet input file from {plugin}/inputs/{name}.php or {theme}/wordlets/inputs/{name}.php
 				 */
-				include(self::$Types[$type]->file);
+				include( self::$Types[$type]->file );
 			} else {
-				trigger_error('Could not find template for wordlet "' . $name . '".', E_USER_WARNING);
+				trigger_error( 'Could not find template for wordlet "' . $name . '".', E_USER_WARNING );
 			} ?>
 		</div>
 		<?php
@@ -914,65 +878,69 @@ class Wordlets_Wordlet implements Iterator {
 	public $_label;
 	public $_description;
 	public $_is_array;
+	public $_instance;
+	public $_file_name;
 
-	public function __construct($name, $type, $default = null, $label = null, $description = null, $is_array = false) {
+	public function __construct( $file_name, &$instance, $name, $type, $default = null, $label = null, $description = null, $is_array = false ) {
 		$this->position = 0;
 
 		$this->_name = $name;
 		$this->_type = $type;
 
-		if ( $type == 'object' && !is_array($default) ) {
+		if ( $type == 'object' && !is_array( $default ) ) {
 			//1 type
 			//2 name
 			//3 default or attributes or options
 			//7 Label
 			//10 Description
 
-			if ( preg_match_all('/([a-z]+)\s+\$([a-z][a-z_0-9]+\s*)(([a-z0-9]+)|("[^"]*")|(\([^\)]*\))\s*)?(([a-z]+)|("[^"]*")\s*)?(([a-z]+)|("[^"]*")\s*)?,?/is',  $default, $matches) ) {
+			if ( preg_match_all( '/([a-z]+)\s+\$([a-z][a-z_0-9]+\s*)(([a-z0-9]+)|("[^"]*")|(\([^\)]*\))\s*)?(([a-z]+)|("[^"]*")\s*)?(([a-z]+)|("[^"]*")\s*)?,?/is',  $default, $matches ) ) {
 				$default = array();
 				foreach ( $matches[2] as $key => $val ) {
 					$val = trim($val);
-					$matches[3][$key] = preg_replace('/^\(([^\)]+)\)$/', '{$1}', trim($matches[3][$key]));
+					$matches[3][$key] = preg_replace( '/^\(([^\)]+)\)$/', '{$1}', trim( $matches[3][$key] ) );
 
-					$default[$val] = new Wordlets_Wordlet($val, $matches[1][$key], trim(trim($matches[3][$key]), '"'), trim(trim($matches[7][$key]), '" '), trim(trim($matches[10][$key]), '" '));
+					$default[$val] = new Wordlets_Wordlet( $file_name, $instance, $val, $matches[1][$key], trim( trim( $matches[3][$key] ), '"' ), trim( trim( $matches[7][$key] ), '" ' ), trim( trim( $matches[10][$key] ), '" ' ) );
 				}
 			}
-		} elseif ( $type == 'select' && !is_array($default) ) {
+		} elseif ( $type == 'select' && !is_array( $default ) ) {
 			//2 name
 			//3 value
 			//6 Text
-			preg_match_all('/[\{\r\n\s]*(([^,]+?)\s*=\s*(("[^"]*")|([^,\}\r\n]+)))|([^,\{\}\=\r\n]+)\s*[,\}\r\n]/i', $default, $matches);
+			preg_match_all( '/[\{\r\n\s]*(([^,]+?)\s*=\s*(("[^"]*")|([^,\}\r\n]+)))|([^,\{\}\=\r\n]+)\s*[,\}\r\n]/i', $default, $matches );
 
 			$default = array();
 			foreach ( $matches[2] as $key => $val ) {
-				$val = trim($val);
-				if ( !empty($val) ) {
-					$default[$val] = trim($matches[3][$key], '"');
-				} elseif ( trim($matches[6][$key]) ) {
-					$default[$matches[6][$key]] = trim($matches[6][$key]);
+				$val = trim( $val );
+				if ( !empty( $val ) ) {
+					$default[$val] = trim( $matches[3][$key], '"' );
+				} elseif ( trim( $matches[6][$key] ) ) {
+					$default[$matches[6][$key]] = trim( $matches[6][$key] );
 				}
 			}
 		}
 
 		$this->_default = $default;
+		$this->_file_name = $file_name;
+		$this->_instance = &$instance;
 		$this->_label = ( $label ) ? $label : $name;
 		$this->_description = $description;
 
 		$this->_is_array = $is_array;
 	}
 
-	public function __get($name) {
+	public function __get( $name ) {
 		// TODO: similar logic to current()
 		if ( $this->_is_array ) {
-			$value = Wordlets_Widget::GetValue($this, $name, $this->position);
+			$value = $this->get_value( $name, $this->position );
 		} else {
-			$value = Wordlets_Widget::GetValue($this, $name);
+			$value = $this->get_value( $name );
 		}
 
-		if ( preg_match('/^\[tags\]([0-9]+)$/', $value, $matches) ) {
-			return get_tag($matches[1]);
-		} elseif ( preg_match('/^\[categories\]([0-9]+)$/', $value, $matches) ) {
-			return get_category($matches[1]);
+		if ( preg_match( '/^\[tags\]([0-9]+)$/', $value, $matches ) ) {
+			return get_tag( $matches[1] );
+		} elseif ( preg_match( '/^\[categories\]([0-9]+)$/', $value, $matches ) ) {
+			return get_category( $matches[1] );
 		}
 
 		return $value;
@@ -980,11 +948,39 @@ class Wordlets_Wordlet implements Iterator {
 
 	public function __toString() {
 		if ( $this->_is_array ) {
-			$value = Wordlets_Widget::GetValue($this, 'value', $this->position);
+			$value = $this->get_value( 'value', $this->position );
 		} else {
-			$value = Wordlets_Widget::GetValue($this, 'value');
+			$value = $this->get_value( 'value' );
 		}
+
 		return '' . $value;
+	}
+
+	/**
+	 * Get current widget's value
+	 */
+	public function set_instance( &$instance ) {
+		$this->_instance = &$instance;
+	}
+
+	/**
+	 * Get current widget's value
+	 */
+	public function get_value( $name, $position = null ) {
+		if ( $this->_type == 'object' ) {
+			$names = $this->_default;
+		} else {
+			$names = array( 'value' => $this->_default );
+		}
+
+		$value_prefix = $this->_file_name . '__' . $this->_name . ( ( $position !== null ) ? '__' . $position : '' );
+		$value_name = $value_prefix . ( ( $name != null ) ? '__' . $name : '' );
+
+		if ( isset( $this->_instance[$value_name] ) ) {
+			return $this->_instance[$value_name];
+		}
+
+		return '';
 	}
 
 	// Iterable
@@ -997,15 +993,15 @@ class Wordlets_Wordlet implements Iterator {
 	function current() {
 		// TODO: similar logic to __get()
 		if ( $this->_is_array ) {
-			$value = Wordlets_Widget::GetValue($this, 'value', $this->position);
+			$value = $this->get_value( 'value', $this->position );
 		} else {
-			$value = Wordlets_Widget::GetValue($this, 'value');
+			$value = $this->get_value( 'value' );
 		}
 
-		if ( preg_match('/^\[tags\]([0-9]+)$/', $value, $matches) ) {
-			return get_tag($matches[1]);
-		} elseif ( preg_match('/^\[categories\]([0-9]+)$/', $value, $matches) ) {
-			return get_category($matches[1]);
+		if ( preg_match( '/^\[tags\]([0-9]+)$/', $value, $matches ) ) {
+			return get_tag( $matches[1] );
+		} elseif ( preg_match( '/^\[categories\]([0-9]+)$/', $value, $matches ) ) {
+			return get_category( $matches[1] );
 		}
 
 		return $this;
@@ -1020,8 +1016,21 @@ class Wordlets_Wordlet implements Iterator {
 	}
 
 	function valid() {
-		$valid = Wordlets_Widget::HasValues($this, $this->position);
+		if ( $this->_type == 'object' ) {
+			$names = $this->_default;
+		} else {
+			$names = array( 'value' => $this->_default );
+		}
 
-		return $valid;
+		$value_prefix = $this->_file_name . '__' . $this->_name . '__' . $this->position;
+		foreach ( $names as $name => $def ) {
+			$value_name = $value_prefix . '__' . $name;
+
+			if ( isset( $this->_instance[$value_name] ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}	
 }

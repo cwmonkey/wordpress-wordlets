@@ -16,7 +16,7 @@ $(function() {
 		if ( !top ) {
 			setTimeout(scroll_top, 100);
 		} else {
-			$(window).scrollTop(top);
+			$(window).scrollTop(top - 38);
 		}
 	};
 

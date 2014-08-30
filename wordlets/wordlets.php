@@ -488,13 +488,6 @@ class Wordlets_Widget extends WP_Widget {
 		<div class="wordlets-widget-wrapper">
 			<fieldset class="wordlets-widget-setup <?php echo ( !empty($instance['hide']) ) ? 'wordlets-widget-hide' : '' ?>">
 				<p>
-					<label for="<?php echo $this->get_field_id( 'title' ); ?>"><?php _e( 'Title (not shown on widget):' ); ?></label> 
-					<input class="widefat wordlet-widget-title" id="<?php echo $this->get_field_id( 'title' ); ?>" name="<?php echo $this->get_field_name( 'title' ); ?>" type="text" value="<?php echo esc_attr( $title ); ?>">
-				</p>
-				<?php 
-
-				?>
-				<p>
 					<label for="<?php echo $this->get_field_id( 'template' ); ?>"><?php _e( 'Template:' ); ?></label> 
 					<select class="wordlets-widget-template" id="<?php echo $this->get_field_id( 'template' ); ?>" name="<?php echo $this->get_field_name( 'template' ); ?>">
 					<?php
@@ -521,6 +514,10 @@ class Wordlets_Widget extends WP_Widget {
 
 					?>
 					</select>
+				</p>
+				<p>
+					<label for="<?php echo $this->get_field_id( 'title' ); ?>"><?php _e( 'Title (not shown on widget):' ); ?></label> 
+					<input class="widefat wordlet-widget-title" id="<?php echo $this->get_field_id( 'title' ); ?>" name="<?php echo $this->get_field_name( 'title' ); ?>" type="text" value="<?php echo esc_attr( $title ); ?>">
 				</p>
 
 				<fieldset class="wordlets-widget-limit">
@@ -977,6 +974,10 @@ class Wordlets_Wordlet implements Iterator {
 		$value_name = $value_prefix . ( ( $name != null ) ? '__' . $name : '' );
 
 		if ( isset( $this->_instance[$value_name] ) ) {
+			if ( is_object( $this->_instance[$value_name] ) ) {
+				$this->_instance[$value_name]->set_instance( $this->_instance );
+			}
+
 			return $this->_instance[$value_name];
 		}
 

@@ -11,7 +11,6 @@ class Wordlets_Widget_Input_Image implements Wordlets_Widget_Input {
 	public $name = 'image';
 
 	public function __construct() {
-error_log(plugins_url('image.js', __FILE__));
 		wp_enqueue_script( 'wordlets_input_image', plugins_url('image.js', __FILE__), array( 'jquery' ) );
 	}
 

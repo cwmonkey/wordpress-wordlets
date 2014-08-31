@@ -9,4 +9,4 @@ function mytheme_wordlets_admin_construct($object) {
 	$object->add_wordlet_type( 'email', $tpl_dir . '/wordlets/inputs/email.php' );
 }
 
-add_action( 'wordlets-admin-construct', 'mytheme_wordlets_admin_construct' );
+add_action( 'wordlets_admin_construct', 'mytheme_wordlets_admin_construct' );

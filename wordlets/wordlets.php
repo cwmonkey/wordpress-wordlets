@@ -35,6 +35,14 @@ function load_wordlets_widget() {
 add_action( 'widgets_init', 'load_wordlets_widget' );
 
 /**
+ * Adds allowable input types to wordlets.
+ */
+function register_wordlets_input( $name ) {
+	$input = new $name();
+	Wordlets_Widget::$Types[$input->name]->object = $input;
+}
+
+/**
  * Wordlets_Widget class
  **/
 class Wordlets_Widget extends WP_Widget {
@@ -100,10 +108,21 @@ class Wordlets_Widget extends WP_Widget {
 	 * @param string $file    Full file path of admin input template.
 	 */
 	public static function AddWordletType( $name, $file ) {
+		if ( $name !== 'object' && !is_readable($file) ) {
+			trigger_error("Unable to read wordlet input $file", E_USER_WARNING);
+			return false;
+		} 
+
 		$type = new stdClass();
 		$type->name = $name;
 		$type->file = $file;
 		self::$Types[$name] = $type;
+
+		if ( $name !== 'object' ) {
+			include ( $file );
+		}
+
+		return true;
 	}
 
 	/**
@@ -402,8 +421,8 @@ class Wordlets_Widget extends WP_Widget {
 		$this->_plugin_dir_path = plugin_dir_path( __FILE__ );
 
 		if ( is_admin() ) {
-			wp_enqueue_script( 'jquery_floatLabels', plugins_url('floatLabels.js', __FILE__), array( 'jquery' ), self::VERSION );
-			wp_enqueue_script( 'wordlets_widget', plugins_url('wordlets-admin.js', __FILE__), array( 'jquery', 'jquery-ui-sortable' ), self::VERSION );
+			wp_enqueue_script( 'jquery_floatLabels', plugins_url('js/floatLabels.js', __FILE__), array( 'jquery' ), self::VERSION );
+			wp_enqueue_script( 'wordlets_widget', plugins_url('js/wordlets-admin.js', __FILE__), array( 'jquery', 'jquery-ui-sortable' ), self::VERSION );
 			wp_enqueue_style( 'wordlets_widget', plugins_url('wordlets-admin.css', __FILE__), null, self::VERSION );
 
 			// image input
@@ -411,7 +430,7 @@ class Wordlets_Widget extends WP_Widget {
 			wp_enqueue_script( 'custom-header' );
 
 			// Allow themes to add admin scripts
-			do_action( 'wordlets-admin-construct', $this );
+			do_action( 'wordlets_admin_construct', $this );
 		}
 
 		// Only do this once per page
@@ -424,7 +443,10 @@ class Wordlets_Widget extends WP_Widget {
 			}
 
 			// Allow themes to add inputs
-			do_action( 'wordlets-construct', $this );
+			do_action( 'wordlets_construct', $this );
+
+			// This is when all the input objects are created
+			do_action( 'wordlets_input_construct', $this );
 		}
 	}
 
@@ -839,6 +861,7 @@ class Wordlets_Widget extends WP_Widget {
 		$input_name = $this->get_field_name( $value_name ) . $value_array;
 		$text_domain = self::$TextDomain;
 		$options = $default;
+		$widget = $this;
 
 		ob_start();
 		?>
@@ -852,17 +875,29 @@ class Wordlets_Widget extends WP_Widget {
 
 		?>
 		<div class="wordlet-input wordlet-input-<?php echo $type ?>">
-			<?php if ( isset( self::$Types[$type] ) && file_exists( self::$Types[$type]->file ) ) {
-				/**
-				 * Include the wordlet input file from {plugin}/inputs/{name}.php or {theme}/wordlets/inputs/{name}.php
-				 */
-				include( self::$Types[$type]->file );
+			<?php if ( isset( self::$Types[$type] ) ) {
+				self::$Types[$type]->object->form_input( get_defined_vars() );
 			} else {
 				trigger_error( 'Could not find template for wordlet "' . $name . '".', E_USER_WARNING );
 			} ?>
 		</div>
 		<?php
 	}
+}
+
+/**
+ * Interface for adding wordlet inputs.
+ */
+interface Wordlets_Widget_Input {
+	/**
+	 * Put your admin scripts etc here.
+	 */
+	public function __construct();
+
+	/**
+	 * displaying the input in the admin widget form.
+	 */
+	public function form_input($args);
 }
 
 /**

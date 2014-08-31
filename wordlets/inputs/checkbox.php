@@ -1,24 +1,32 @@
 <?php
 
-/**
- * Wordlet Image input view.
- *
- * @var string $default_label   Default HTML output for input <label>.
- * @var string $description     Wordlet description field.
- * @var bool   $hide_labels     true if within an array and labels have already been displayed
- * @var string $input_name      Input name attribute.
- * @var array  $options         List of options for select.
- * @var string $text_domain     Wordlet text domain
- * @var string $value           Input value
- * @var string $value_id        Input id attribute
- */
+// Load the input on wordlets_input_construct
+function load_wordlets_input_checkbox() {
+	register_wordlets_input( 'Wordlets_Widget_Input_Checkbox' );
+}
 
-?>
+add_action( 'wordlets_input_construct', 'load_wordlets_input_checkbox' );
 
-<input type="checkbox" id="<?php echo $input_id; ?>" name="<?php echo $input_name; ?>" type="text" value="1" <?php echo ( $value ) ? 'checked':'' ?>>
+class Wordlets_Widget_Input_Checkbox implements Wordlets_Widget_Input {
+	public $name = 'checkbox';
 
-<?php echo $default_label; ?>
+	public function __construct() {
+		// No special admin scripts for this input
+	}
 
-<?php if ( $description && !$hide_labels ) { ?>
-	<label class="wordlet-description"><?php echo $description ?></label>
-<?php } ?>
+	public function form_input($args) {
+		extract($args);
+		?>
+		<input type="checkbox" id="<?php echo $input_id; ?>" name="<?php echo $input_name; ?>" type="text" value="1" <?php echo ( $value ) ? 'checked':'' ?>>
+
+		<?php echo $default_label; ?>
+
+		<?php if ( $description && !$hide_labels ) { ?>
+			<label class="wordlet-description"><?php echo $description ?></label>
+		<?php } ?>
+
+		<?php
+	}
+}
+
+

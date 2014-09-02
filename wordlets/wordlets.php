@@ -195,9 +195,15 @@ class Wordlets_Widget extends WP_Widget {
 		foreach ( $showhides as $sh => $ret ) {
 			// See if show/hide checkbox was checked
 			if ( !empty( $instance['showhide_' . $sh] ) ) {
-				// Page type was blanked shown/hidden
+				// Page type was blanket shown/hidden
 				if ( !empty( $instance['page_type_' . $sh . '_' . $page_type] ) ) {
-					return $ret;
+					if ( $page_type === 'archive' && is_category() && !empty( $instance['usage_category_' . $sh] ) ) {
+					} elseif ( $page_type === 'single' && ( !empty( $instance['usage_category_' . $sh] ) || !empty( $instance['ids_' . $sh] ) ) ) {
+					} elseif ( $page_type === 'page' && !empty( $instance['template_' . $sh . '_' . $page_template] ) ) {
+						// do nothing for the above since they should be inclusive
+					} else {
+						return $ret;
+					}
 				}
 
 				// If current page is an archive type, check for category constraints

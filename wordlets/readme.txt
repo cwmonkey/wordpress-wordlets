@@ -1,4 +1,4 @@
-=== Plugin Name ===
+=== Wordlets ===
 Contributors: cwmonkey
 Donate link: http://cwmonkey.com/
 Tags: widget

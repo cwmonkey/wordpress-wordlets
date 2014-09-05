@@ -8,22 +8,20 @@
  * @name        Test
  * @description Test Wordlet Template
  *
- * @wordlet      type     $name ("Default" | { type $property (select options)|"Default" "Description or first select option", ... } | { value = Option | Option | [tags|categories] } ) "Label" "Long Description"
+ * @wordlet      type     $name ("Default" | { type $property "Default", ... } | { value = Option | Option | [tags|categories] } ) "Label" "Long Description"
  *
- * @wordletArray select   $tags { [tags], small = Small, Thing } Tags "Select a tag"
+ * @wordletArray select   $tags { [tags] } Tags "Select a tag"
  * @wordletArray select   $categories { [categories] } Categories "Select a category"
  * @wordlet      object   $main_image {
- *                                image  $src "" "Image URL",
- *                                text   $alt "" "Alt",
- *                                number $width "" "Width",
- *                                number $height "" "Height"
+ *                               image  $src "" "Image ID",
+ *                               text   $alt "" "Alt",
+ *                               select $size ( [image_sizes] ) "Size" "Select a Size"
  *                            } "Main Image" "Appears above form"
  * @wordletArray object   $images {
- *                               image  $src "" "Image URL",
+ *                               image  $src "" "Image ID",
  *                               text   $alt "" "Alt",
  *                               text   $link "" "Link Href",
- *                               number $width "" "Width",
- *                               number $height "" "Height",
+ *                               select $size ( [image_sizes] ) "Size" "Select a Size"
  *                               select $category ( [categories] ) "Category" "Select a Category"
  *                            } Images
  * @wordlet      select   $style {
@@ -58,16 +56,16 @@
 	<p>Tag: <?=$tag->name ?></p>
 <? endforeach ?>
 
-<img src="<?=$main_image->src ?>" alt="<?=$main_image->alt ?>" width="<?=$main_image->width ?>">
+<img src="<?=wp_get_attachment_image_src( $main_image->src, $main_image->size )[0] ?>" alt="<?=$main_image->alt ?>" width="<?=$main_image->width ?>">
 <hr>
 <? foreach ( $images as $image): ?>
 	<?=$image->category->name ?>
 	<? if ( $image->link ): ?>
 		<a href="<?=$image->link ?>">
-			<img src="<?=$image->src ?>" alt="<?=$image->alt ?>" width="<?=$image->width ?>">
+			<img src="<?=wp_get_attachment_image_src( $image->src, $image->size )[0]; ?>" alt="<?=$image->alt ?>" width="<?=$image->width ?>">
 		</a>
 	<? else: ?>
-		<img src="<?=$image->src ?>" alt="<?=$image->alt ?>" width="<?=$image->width ?>">
+		<img src="<?=wp_get_attachment_image_src( $image->src, $image->size )[0] ?>" alt="<?=$image->alt ?>" width="<?=$image->width ?>">
 	<? endif ?>
 <? endforeach ?>
 

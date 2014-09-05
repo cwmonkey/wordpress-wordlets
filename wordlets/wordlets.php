@@ -427,9 +427,14 @@ class Wordlets_Widget extends WP_Widget {
 		$this->_plugin_dir_path = plugin_dir_path( __FILE__ );
 
 		if ( is_admin() ) {
-			wp_enqueue_script( 'jquery_floatLabels', plugins_url('js/floatLabels.js', __FILE__), array( 'jquery' ), self::VERSION );
+			wp_enqueue_script('jquery');
+			wp_enqueue_script('jquery-ui-core');
+			wp_enqueue_script('jquery-ui-dialog');
+ 			wp_enqueue_script( 'jquery_floatLabels', plugins_url('js/floatLabels.js', __FILE__), array( 'jquery' ), self::VERSION );
 			wp_enqueue_script( 'wordlets_widget', plugins_url('js/wordlets-admin.js', __FILE__), array( 'jquery', 'jquery-ui-sortable' ), self::VERSION );
+
 			wp_enqueue_style( 'wordlets_widget', plugins_url('wordlets-admin.css', __FILE__), null, self::VERSION );
+			wp_enqueue_style("wp-jquery-ui-dialog");
 
 			// image input
 			if ( ! did_action( 'wp_enqueue_media' ) ) wp_enqueue_media();
@@ -979,6 +984,8 @@ class Wordlets_Wordlet implements Iterator {
 			return get_tag( $matches[1] );
 		} elseif ( preg_match( '/^\[categories\]([0-9]+)$/', $value, $matches ) ) {
 			return get_category( $matches[1] );
+		/*} elseif ( preg_match( '/^\[image_sizes\]([^)]+)$/', $value, $matches ) ) {
+			return $matches[1];*/
 		}
 
 		return $value;
@@ -1044,6 +1051,8 @@ class Wordlets_Wordlet implements Iterator {
 			return get_tag( $matches[1] );
 		} elseif ( preg_match( '/^\[categories\]([0-9]+)$/', $value, $matches ) ) {
 			return get_category( $matches[1] );
+		/*} elseif ( preg_match( '/^\[image_sizes\]([^)]+)$/', $value, $matches ) ) {
+			return $matches[1];*/
 		}
 
 		return $this;

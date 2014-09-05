@@ -10,20 +10,69 @@ $('body')
 		var button_id = '#' + this.id;
 		var send_attachment_bkp = wp.media.editor.send.attachment;
 		var target = $this.data('target');
-		var alt = $this.data('alt');
-		var width = $this.data('width');
-		var height = $this.data('height');
 		var image = $this.data('image');
+
 		_custom_media = true;
 
-		wp.media.editor.send.attachment = function(props, attachment){
+		wp.media.editor.send.attachment = function(props, attachment) {
+			/*var updates = {
+				alt: {
+					value: attachment.alt
+				},
+				width: {
+					value: attachment.width
+				},
+				height: {
+					value: attachment.height
+				},
+				size: {
+					value: props.size
+				},
+				align: {
+					value: props.align
+				}
+			};*/
+
 			if ( _custom_media ) {
-				$(target).val(attachment.url).trigger('change');
-				$(width).val(attachment.width).trigger('change');
-				$(height).val(attachment.height).trigger('change');
+				/*var $d = $('<div/>');
+
+				for ( var update in updates ) {
+					var p = updates[update];
+					var $input = $($this.data(update));
+					if ( $input.length && $input.val() !== '' ) {
+						var id = 'imginput' + update;
+						var $check = $(
+							'<label for="' + id + '" class="wordlet-dialog-label">\
+								<input type="checkbox" id="' + id + '" checked>\
+								<p class="wordlet-dialog-name">' + update + ', Current Value:</p>\
+								<p class="wordlet-dialog-current">' + $input.val() + '</p>\
+							</label>');
+						$d.append($check);
+					}
+				}
+
+				$d.dialog({
+					title: 'Update inputs?',
+					modal: true,
+					closeOnEscape: false,
+					buttons: [
+						{
+							text: 'Ok',
+							click: function() {
+								$( this ).dialog( 'close' );
+							}
+						}
+					],
+					open: function() {
+
+					},
+					close: function() {
+
+					}
+				});*/
+
+				$(target).val(attachment.id).trigger('change');
 				$(image).attr({src: attachment.url});
-				if ( !$(alt).val() ) $(alt).val(attachment.alt).trigger('change');
-				//$('.custom_media_url').val(attachment.url);
 			} else {
 				return _orig_send_attachment.apply( button_id, [props, attachment] );
 			}

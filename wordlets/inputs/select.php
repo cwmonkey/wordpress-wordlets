@@ -30,6 +30,10 @@ class Wordlets_Widget_Input_Select implements Wordlets_Widget_Input {
 					<?php foreach ( get_categories() as $category ) { ?>
 						<option value="<?php echo esc_attr( $val . $category->term_id ); ?>" <?php echo ( $val . $category->term_id == $value )?'selected':'' ?>><?php echo esc_attr( $category->name ); ?></option>
 					<?php } ?>
+				<?php } elseif ( $val == '[image_sizes]' ) { ?>
+					<?php foreach ( get_intermediate_image_sizes() as $image_size ) { ?>
+						<option value="<?php echo esc_attr( $image_size ); ?>" <?php echo ( $image_size == $value )?'selected':'' ?>><?php echo esc_attr( $image_size ); ?></option>
+					<?php } ?>
 				<?php } else { ?>
 					<option value="<?php echo esc_attr( $key ); ?>" <?php echo ( $key == $value )?'selected':'' ?>><?php echo esc_attr( __( $val , $text_domain ) ); ?></option>
 				<?php } ?>

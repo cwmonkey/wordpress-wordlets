@@ -178,3 +178,20 @@
 	padding: 0 1em 1em 1em;
 	margin-bottom: 1em;
 }
+
+.wordlet-dialog-label {
+	display: block;
+	padding-left: 2em;
+	position: relative;
+}
+
+.wordlet-dialog-label input {
+	position: absolute;
+	left: 0;
+	top: .5em;
+}
+
+.wordlet-dialog-name {
+	font-weight: bold;
+	text-transform: capitalize;
+}

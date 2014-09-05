@@ -29,7 +29,7 @@ class Wordlets_Widget_Input_Image implements Wordlets_Widget_Input {
 				data-size="#<?php echo $widget->get_field_id( $value_prefix . '__size' ) . $id_extra; ?>"
 				data-image="#<?php echo $input_id; ?>-image"
 				>
-			<img style="max-width:100%;max-height:100px;" id="<?php echo $input_id; ?>-image" src="<?php echo esc_attr( (($value)?wp_get_attachment_image_src( $value )[0]:'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7') ); ?>">
+			<img style="max-width:100%;max-height:100px;" id="<?php echo $input_id; ?>-image" src="<?php echo esc_attr( (($value)?wp_get_attachment_image_src( $value, 'imgsize' )[0]:'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7') ); ?>">
 
 			<?php if ( $description && !$hide_labels ) { ?>
 				<label class="wordlet-description"><?php echo $description ?></label>

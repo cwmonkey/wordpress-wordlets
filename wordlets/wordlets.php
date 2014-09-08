@@ -34,6 +34,23 @@ function load_wordlets_widget() {
 
 add_action( 'widgets_init', 'load_wordlets_widget' );
 
+function enqueue_widget_scripts() {
+	wp_enqueue_script('jquery');
+	wp_enqueue_script('jquery-ui-core');
+	wp_enqueue_script('jquery-ui-dialog');
+	wp_enqueue_script( 'jquery_floatLabels', plugins_url('js/floatLabels.js', __FILE__), array( 'jquery' ), Wordlets_Widget::VERSION );
+	wp_enqueue_script( 'wordlets_widget', plugins_url('js/wordlets-admin.js', __FILE__), array( 'jquery', 'jquery-ui-sortable' ), Wordlets_Widget::VERSION );
+
+	wp_enqueue_style( 'wordlets_widget', plugins_url('wordlets-admin.css', __FILE__), null, Wordlets_Widget::VERSION );
+	wp_enqueue_style("wp-jquery-ui-dialog");
+
+	// image input
+	if ( ! did_action( 'wp_enqueue_media' ) ) wp_enqueue_media();
+	wp_enqueue_script( 'custom-header' );
+}
+
+add_action( 'widgets_admin_page', 'enqueue_widget_scripts' );
+
 /**
  * Adds allowable input types to wordlets.
  */
@@ -426,23 +443,10 @@ class Wordlets_Widget extends WP_Widget {
 
 		$this->_plugin_dir_path = plugin_dir_path( __FILE__ );
 
-		if ( is_admin() ) {
-			wp_enqueue_script('jquery');
-			wp_enqueue_script('jquery-ui-core');
-			wp_enqueue_script('jquery-ui-dialog');
- 			wp_enqueue_script( 'jquery_floatLabels', plugins_url('js/floatLabels.js', __FILE__), array( 'jquery' ), self::VERSION );
-			wp_enqueue_script( 'wordlets_widget', plugins_url('js/wordlets-admin.js', __FILE__), array( 'jquery', 'jquery-ui-sortable' ), self::VERSION );
-
-			wp_enqueue_style( 'wordlets_widget', plugins_url('wordlets-admin.css', __FILE__), null, self::VERSION );
-			wp_enqueue_style("wp-jquery-ui-dialog");
-
-			// image input
-			if ( ! did_action( 'wp_enqueue_media' ) ) wp_enqueue_media();
-			wp_enqueue_script( 'custom-header' );
-
+		//if ( is_admin() ) {
 			// Allow themes to add admin scripts
-			do_action( 'wordlets_admin_construct', $this );
-		}
+			// do_action( 'wordlets_admin_construct', $this );
+		//}
 
 		// Only do this once per page
 		if ( !count( self::$Types ) ) {

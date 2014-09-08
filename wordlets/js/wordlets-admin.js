@@ -1,5 +1,10 @@
 (function($, undefined) {
 
+var $body = $('body');
+if ( !$body.is('.widgets-php') ) {
+	return;
+}
+
 $(function() {
 	// Open the widget
 	var hash = null;
@@ -39,7 +44,7 @@ $(function() {
 		setTimeout(open_widget, 100);
 	}
 
-	$('body')
+	$body
 		// show/hide inputs for template
 		.delegate('.wordlets-widget-template', 'change', function() {
 			var $this = $(this);

@@ -40,7 +40,7 @@ var update_input = function(input, settings, add_parent_class) {
 
 	// Compensate for no labels
 	var $label = $wrapper.find('label');
-	if ( !$label.length ) {
+	if ( !$label.length && add_parent_class && $label.closest('.' + add_parent_class).length ) {
 		// Compensate for no id
 		var id = input.id || $input.attr('id', settings.prepend + 'input-' + (new Date()).getTime()).attr('id');
 		$label = $('<label/>')

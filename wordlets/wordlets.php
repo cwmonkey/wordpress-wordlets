@@ -481,22 +481,32 @@ class Wordlets_Widget extends WP_Widget {
 		$this->_file = $file = self::GetWordletFiles( $instance, $instance['template'] );
 		$this->_instance = $instance;
 
-		echo $args['before_widget'];
-
 		self::SetInstance( $instance, $file['wordlets'] );
 
 		extract($file['wordlets']);
 
+		ob_start();
+
 		/**
 		 * Include the wordlet file from {theme}/wordlet-{name}.php or {theme}/wordlets/{name}.php
  		 */
-		include($file['props']['file']);
+		$retval = include($file['props']['file']);
+
+		$output = ob_get_clean();
+
+		if ( $retval ) {
+			echo $args['before_widget'];
+
+			echo $output;
+		}
 
 		if ( current_user_can( 'manage_options' ) ) {
 			echo '<a href="' . admin_url( 'widgets.php?' . $args['widget_id'] ) . '" target="_blank" class="wordlets-admin-link">' . __( 'Edit', self::$TextDomain ) . '</a>';
 		}
 
-		echo $args['after_widget'];
+		if ( $retval ) {
+			echo $args['after_widget'];
+		}
 	}
 
 	/**

@@ -15,7 +15,7 @@ $('body')
 		_custom_media = true;
 
 		wp.media.editor.send.attachment = function(props, attachment) {
-			/*var updates = {
+			var updates = {
 				alt: {
 					value: attachment.alt
 				},
@@ -31,9 +31,19 @@ $('body')
 				align: {
 					value: props.align
 				}
-			};*/
+			};
 
 			if ( _custom_media ) {
+				var ups = [];
+
+				for ( var update in updates ) {
+					var p = updates[update];
+					var $input = $($this.data(update));
+					if ( $input.length && $input.val() !== '' ) {
+						ups.push(update);
+					}
+				}
+
 				/*var $d = $('<div/>');
 
 				for ( var update in updates ) {
@@ -71,8 +81,17 @@ $('body')
 					}
 				});*/
 
+				if ( !ups.length || (ups.length && confirm('Update ' + ups.join(', ') + '?')) ) {
+					for ( var update in updates ) {
+						var p = updates[update];
+						var $input = $($this.data(update));
+						$input.val(p.value).trigger('change');
+					}
+				}
+
 				$(target).val(attachment.id).trigger('change');
 				$(image).attr({src: attachment.url});
+
 			} else {
 				return _orig_send_attachment.apply( button_id, [props, attachment] );
 			}

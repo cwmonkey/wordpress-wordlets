@@ -522,7 +522,8 @@ class Wordlets_Widget extends WP_Widget {
 		if ( isset( $instance[ 'title' ] ) ) {
 			$title = $instance[ 'title' ];
 		} elseif ( count($wordlets_files) ) {
-			$props = $wordlets_files[array_keys($wordlets_files)[0]]['props'];
+			$array_keys_wordlets_files = array_keys($wordlets_files);
+			$props = $wordlets_files[$array_keys_wordlets_files[0]]['props'];
 			$title = __( $props['name'] . ((isset($props['description']))?' (' . $props['description'] . ')':''), self::$TextDomain );
 		} else {
 			$title = __( 'New Wordlet', self::$TextDomain );

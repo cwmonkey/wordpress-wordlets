@@ -56,16 +56,20 @@
 	<p>Tag: <?=$tag->name ?></p>
 <? endforeach ?>
 
-<img src="<?=wp_get_attachment_image_src( $main_image->src, $main_image->size )[0] ?>" alt="<?=$main_image->alt ?>" width="<?=$main_image->width ?>">
+<? if ( $wp_get_attachment_image_src = wp_get_attachment_image_src( $main_image->src, $main_image->size ) ): ?>
+	<img src="<?=$wp_get_attachment_image_src[0] ?>" alt="<?=$main_image->alt ?>" width="<?=$main_image->width ?>">
+<? endif ?>
 <hr>
 <? foreach ( $images as $image): ?>
 	<?=$image->category->name ?>
 	<? if ( $image->link ): ?>
 		<a href="<?=$image->link ?>">
-			<img src="<?=wp_get_attachment_image_src( $image->src, $image->size )[0]; ?>" alt="<?=$image->alt ?>" width="<?=$image->width ?>">
+			<? if ( $wp_get_attachment_image_src = wp_get_attachment_image_src( $image->src, $image->size ) ): ?>
+				<img src="<?=$wp_get_attachment_image_src[0]; ?>" alt="<?=$image->alt ?>" width="<?=$image->width ?>">
+			<? endif ?>
 		</a>
-	<? else: ?>
-		<img src="<?=wp_get_attachment_image_src( $image->src, $image->size )[0] ?>" alt="<?=$image->alt ?>" width="<?=$image->width ?>">
+	<? elseif ( $wp_get_attachment_image_src = wp_get_attachment_image_src( $image->src, $image->size ) ): ?>
+		<img src="<?=$wp_get_attachment_image_src[0] ?>" alt="<?=$image->alt ?>" width="<?=$image->width ?>">
 	<? endif ?>
 <? endforeach ?>
 

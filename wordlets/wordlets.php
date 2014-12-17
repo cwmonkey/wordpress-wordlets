@@ -575,10 +575,6 @@ class Wordlets_Widget extends WP_Widget {
 					<label for="<?php echo $this->get_field_id( 'title' ); ?>"><?php _e( 'Title (not shown on widget):' ); ?></label> 
 					<input class="widefat wordlet-widget-title" id="<?php echo $this->get_field_id( 'title' ); ?>" name="<?php echo $this->get_field_name( 'title' ); ?>" type="text" value="<?php echo esc_attr( $title ); ?>">
 				</p>
-				<p>
-					<label for="<?php echo $this->get_field_id( 'class' ); ?>"><?php _e( 'Class:' ); ?></label> 
-					<input class="widefat wordlet-widget-title" id="<?php echo $this->get_field_id( 'class' ); ?>" name="<?php echo $this->get_field_name( 'class' ); ?>" type="text" value="<?php echo esc_attr( $class ); ?>">
-				</p>
 
 				<fieldset class="wordlets-widget-limit">
 					<legend><?php echo __('Display widget for') ?>:</legend>

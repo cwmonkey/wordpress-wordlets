@@ -378,9 +378,9 @@ class Wordlets_Widget extends WP_Widget {
 		if ( preg_match( '/\/\*\*(.*)\*\//is', $content, $matches ) && !empty( $matches[1] ) ) {
 			$comment = preg_replace( '/([\r\n]+)*[ \t]*\*[ \t]*/is', '$1', $matches[1] );
 
-			if ( preg_match_all( '/@((name)|(description))\s*([^@]+?)(?=[\r\n]*@)/is', $comment, $properties ) && !empty( $properties[1] ) ) {
+			if ( preg_match_all( '/@((name)|(description)|(class))\s*([^@]+?)(?=[\r\n]*@)/is', $comment, $properties ) && !empty( $properties[1] ) ) {
 				foreach ( $properties[1] as $key => $property ) {
-					$file_props[strtolower( trim( $property ) )] = trim( $properties[4][$key] );
+					$file_props[strtolower( trim( $property ) )] = trim( $properties[5][$key] );
 				}
 			}
 
@@ -495,7 +495,11 @@ class Wordlets_Widget extends WP_Widget {
 		$output = ob_get_clean();
 
 		if ( $retval ) {
-			echo $args['before_widget'];
+			$pathinfo = pathinfo($file['props']['file']);
+			$filename = $pathinfo['filename'];
+			$classname = ( !empty($file['props']['class']) ) ? $file['props']['class'] . ' ' : '' ;
+
+			echo preg_replace('/class="/', 'class="wordlet-' . $filename . ' ' . $classname, $args['before_widget'], 1);
 
 			echo $output;
 		}
@@ -527,6 +531,10 @@ class Wordlets_Widget extends WP_Widget {
 			$title = __( $props['name'] . ((isset($props['description']))?' (' . $props['description'] . ')':''), self::$TextDomain );
 		} else {
 			$title = __( 'New Wordlet', self::$TextDomain );
+		}
+
+		if ( isset( $instance[ 'class' ] ) ) {
+			$class = $instance[ 'class' ];
 		}
 
 		$pages = wp_get_theme()->get_page_templates();
@@ -566,6 +574,10 @@ class Wordlets_Widget extends WP_Widget {
 				<p>
 					<label for="<?php echo $this->get_field_id( 'title' ); ?>"><?php _e( 'Title (not shown on widget):' ); ?></label> 
 					<input class="widefat wordlet-widget-title" id="<?php echo $this->get_field_id( 'title' ); ?>" name="<?php echo $this->get_field_name( 'title' ); ?>" type="text" value="<?php echo esc_attr( $title ); ?>">
+				</p>
+				<p>
+					<label for="<?php echo $this->get_field_id( 'class' ); ?>"><?php _e( 'Class:' ); ?></label> 
+					<input class="widefat wordlet-widget-title" id="<?php echo $this->get_field_id( 'class' ); ?>" name="<?php echo $this->get_field_name( 'class' ); ?>" type="text" value="<?php echo esc_attr( $class ); ?>">
 				</p>
 
 				<fieldset class="wordlets-widget-limit">

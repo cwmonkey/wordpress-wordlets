@@ -1133,14 +1133,20 @@ function wordlet_shortcode( $args, $content = null ) {
 
 	$id = @$shortcode_atts['id'];
 
-	if ( empty( $id ) || ! isset( $wp_registered_widgets[$id] ) ) {
+	if ( empty($id) ) {
+		return;
+	}
+
+	preg_match( '/(\d+)$/', $id, $matches );
+	$id = 'wordlets_widget-' . $matches[0];
+
+	if ( ! isset( $wp_registered_widgets[$id] ) ) {
 		return;
 	}
 
 	// get the widget instance options
-	preg_match( '/(\d+)$/', $id, $number );
 	$options = get_option( $wp_registered_widgets[$id]['callback'][0]->option_name );
-	$instance = $options[$number[0]];
+	$instance = $options[$matches[0]];
 	$class = get_class( $wp_registered_widgets[$id]['callback'][0] );
 	$sidebars_widgets = wp_get_sidebars_widgets();
 
@@ -1172,7 +1178,7 @@ function wordlet_shortcode( $args, $content = null ) {
 			'widget_name' => $wp_registered_widgets[$id]['name']
 		),
 		1 => array(
-			'number' => $number[0]
+			'number' => $matches[0]
 		)
 	);
 	$params = apply_filters( 'dynamic_sidebar_params', $params );

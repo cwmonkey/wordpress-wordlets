@@ -543,6 +543,7 @@ class Wordlets_Widget extends WP_Widget {
 		?>
 		<div class="wordlets-widget-wrapper">
 			<fieldset class="wordlets-widget-setup <?php echo ( !empty($instance['hide']) ) ? 'wordlets-widget-hide' : '' ?>">
+				<label class="wordlet-widget-headline"><?=__( 'Wordlet Setup' ) ?>:</label>
 				<p>
 					<label for="<?php echo $this->get_field_id( 'template' ); ?>"><?php _e( 'Template:' ); ?></label> 
 					<select class="wordlets-widget-template" id="<?php echo $this->get_field_id( 'template' ); ?>" name="<?php echo $this->get_field_name( 'template' ); ?>">
@@ -705,6 +706,10 @@ class Wordlets_Widget extends WP_Widget {
 		}
 
 		?>
+			<div class="wordlet-widget-code">
+				<label class="wordlet-widget-headline" for="widget-wordlet-<?=$this->id ?>"><?php echo __( 'Shortcode' ) ?>:</label>
+				<p><?php echo ( ( $this->number == '__i__' ) ? __( 'Please save this first.' ) : '<input type="text" readonly class="widget-wordlet-code-input" id="widget-wordlet-<?=$this->id ?>" value="[wordlet id=&quot;' . $instance['template'] . '-' . $this->number .'&quot;]">' ) ?></p>
+			</div>
 		</div>
 		<?php
 	}
@@ -1107,4 +1112,84 @@ class Wordlets_Wordlet implements Iterator {
 
 		return false;
 	}	
+}
+
+/**
+ * Wordlets shortcode -----------------------------------------------------------------------------------------
+ */
+
+add_shortcode( 'wordlet', 'wordlet_shortcode' );
+add_action( 'widgets_init', 'wordlet_shortcode_sidebar', 30 );
+
+/**
+ * Shortcode rendering function
+ */
+function wordlet_shortcode( $args, $content = null ) {
+	global $_wp_sidebars_widgets, $wp_registered_widgets, $wp_registered_sidebars;
+
+	$shortcode_atts = shortcode_atts( array(
+		'id' => '',
+	), $args, 'widget' );
+
+	$id = @$shortcode_atts['id'];
+
+	if ( empty( $id ) || ! isset( $wp_registered_widgets[$id] ) ) {
+		return;
+	}
+
+	// get the widget instance options
+	preg_match( '/(\d+)$/', $id, $number );
+	$options = get_option( $wp_registered_widgets[$id]['callback'][0]->option_name );
+	$instance = $options[$number[0]];
+	$class = get_class( $wp_registered_widgets[$id]['callback'][0] );
+	$sidebars_widgets = wp_get_sidebars_widgets();
+
+	$widgets_map = array();
+	if ( ! empty( $sidebars_widgets ) ) {
+		foreach( $sidebars_widgets as $position => $widgets ) {
+			if ( ! empty( $widgets) ) {
+				foreach( $widgets as $widget ) {
+					$widgets_map[$widget] = $position;
+				}
+			}
+		}
+	}
+
+	$_original_widget_position = $widgets_map[$id];
+
+	// maybe the widget is removed or deregistered
+	if( ! $class ) {
+		return;
+	}
+
+	// build the widget args that needs to be filtered through dynamic_sidebar_params
+	$params = array(
+		0 => array(
+			'name' => $wp_registered_sidebars[$_original_widget_position]['name'],
+			'id' => $wp_registered_sidebars[$_original_widget_position]['id'],
+			'description' => $wp_registered_sidebars[$_original_widget_position]['description'],
+			'widget_id' => $id,
+			'widget_name' => $wp_registered_widgets[$id]['name']
+		),
+		1 => array(
+			'number' => $number[0]
+		)
+	);
+	$params = apply_filters( 'dynamic_sidebar_params', $params );
+
+	// render the widget
+	the_widget( $class, $instance, $params[0] );
+}
+
+/**
+ * Add an optional widget area for wordlet shortcodes
+ */
+function wordlet_shortcode_sidebar() {
+	register_sidebar( array(
+		'name' => __( 'Wordlet Shortcodes (Not Shown)' ),
+		'id' => 'wordlet_shortcodes',
+		'description'	=> __( 'This area can be used for [wordlet] shortcodes.' ),
+		'before_widget' => '',
+		'after_widget'	=> '',
+	) );
 }

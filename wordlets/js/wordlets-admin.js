@@ -110,6 +110,16 @@ $(function() {
 				$target.slideDown(500);
 			}
 		})
+		// select shortcode
+		.delegate('.widget-wordlet-code-input', 'focus mousedown', function() {
+			$(this).select();
+		})
+		.delegate('.widget-wordlet-code-input', 'mouseup', function() {
+			var $this = $(this);
+			setTimeout(function() {
+				$this.select();
+			}, 0);
+		})
 		;
 
 });

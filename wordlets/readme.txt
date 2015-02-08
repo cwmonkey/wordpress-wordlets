@@ -3,7 +3,7 @@ Contributors: cwmonkey
 Donate link: http://cwmonkey.com/
 Tags: widget
 Requires at least: 3.9.2
-Tested up to: 3.9.2
+Tested up to: 4.1.0
 Stable tag:
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -16,6 +16,8 @@ This plugin allows you to do the following:
 * Keep your HTML and display logic in templates
 * Keep your widget content and settings in the CMS
 * Allow you to make new widgets without having to make or install new plugins
+* Show (or hide) your widgets on specified pages (post id's, tags, categories, logged-in, etc)
+* Automatically have shortcodes generated for your widgets
 
 The templates for each widget are named in a specific manner (wordlets-{name}.php or wordlets/{name}.php).
 

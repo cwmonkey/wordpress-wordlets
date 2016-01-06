@@ -1184,7 +1184,9 @@ function wordlet_shortcode( $args, $content = null ) {
 	$params = apply_filters( 'dynamic_sidebar_params', $params );
 
 	// render the widget
+	ob_start();
 	the_widget( $class, $instance, $params[0] );
+	return ob_get_clean();
 }
 
 /**
